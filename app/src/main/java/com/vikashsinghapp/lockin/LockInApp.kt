@@ -1,6 +1,10 @@
 package com.vikashsinghapp.lockin
 
 import android.app.Application
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.analytics
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
@@ -32,12 +36,12 @@ class LockInApp : Application() {
         // Obtain the FirebaseAnalytics instance.
         firebaseAnalytics = Firebase.analytics
 
-        if (BuildConfig.DEBUG) {
+//        if (BuildConfig.DEBUG) {
             // DebugTree() -Automatically infers the tag from the calling class.
-            Timber.plant(Timber.DebugTree())
+        Timber.plant(Timber.DebugTree())
             // TOd0 : Put same TAG here
 //            Timber.tag(TAG)
-        }
+//        }
 
         // Firebase will be enabled in debug as well as in Release App because of the
         // .debug & without debug variant on Firebase Project
