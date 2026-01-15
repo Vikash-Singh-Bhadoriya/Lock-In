@@ -7,9 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.vikashsinghapp.lockin.presentation.journal.JournalScreen
 import com.vikashsinghapp.lockin.ui.theme.LockInTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -23,20 +22,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             LockInTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Vikash",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    JournalScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "LockIn $name!",
-        modifier = modifier
-    )
 }

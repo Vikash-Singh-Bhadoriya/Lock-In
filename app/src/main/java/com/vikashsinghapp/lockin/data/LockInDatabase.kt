@@ -8,10 +8,10 @@ import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
 import com.vikashsinghapp.lockin.data.dao.PromiseDao
 import com.vikashsinghapp.lockin.data.entity.DayReflection
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
-import com.vikashsinghapp.lockin.data.entity.PromiseTaskStatus
+import com.vikashsinghapp.lockin.data.entity.PromiseTask
 
 @Database(
-    entities = [PromiseTaskStatus::class, JournalMessage::class, DayReflection::class],
+    entities = [PromiseTask::class, JournalMessage::class, DayReflection::class],
     version = 1
 )
 @TypeConverters(Converters::class)
