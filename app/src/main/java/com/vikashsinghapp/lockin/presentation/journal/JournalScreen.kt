@@ -1,15 +1,19 @@
 package com.vikashsinghapp.lockin.presentation.journal
 
+import TaskExecutionOverlay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +36,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,36 +50,56 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
+import com.vikashsinghapp.lockin.domain.ExecutionController
+import com.vikashsinghapp.lockin.ui.theme.AccentBlue
+import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
+import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
+import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JournalScreen(
     modifier: Modifier = Modifier,
+    paddingValues: PaddingValues = PaddingValues(),
     viewModel: JournalViewModel = hiltViewModel(),
 ) {
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
 
+    val executionController = remember { ExecutionController() }
+    val executionState by executionController.state.collectAsState()
+
+
     Scaffold(
-        modifier = modifier,
-        containerColor = Color.Black,
+        modifier = modifier.padding(paddingValues),
+        containerColor = BackgroundDark,
+        contentWindowInsets = WindowInsets.safeDrawing, // IMPORTANT
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         "LockIn",
                         color = Color.White,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black
-                ),
                 navigationIcon = {
-                    IconButton(onClick = { /* menu */ }) {
-                        Icon(Icons.Default.Menu, contentDescription = null, tint = Color.White)
+                    IconButton(onClick = {}) {
+                        Icon(
+                            Icons.Default.Menu,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = SurfaceDark
+                )
+            )
+            TaskExecutionOverlay(
+                state = executionState,
+                onStop = { executionController.stop() }
             )
 
         },
@@ -85,8 +110,10 @@ fun JournalScreen(
                     inputText = it
                 },
                 onSend = {
-                    viewModel.sendMessage(inputText)
-                    inputText = ""
+                    if (inputText.isNotBlank()) {
+                        viewModel.sendMessage(inputText.trim(), executionState)
+                        inputText = ""
+                    }
                 }
             )
         }
@@ -98,7 +125,10 @@ fun JournalScreen(
 //        ) {
         MessageList(
             messages = messages,
-            modifier = Modifier.padding(padding)
+            modifier = Modifier
+                .padding(padding)
+                .imePadding() // 👈 ONLY message list moves
+
         )
     }
 }
@@ -110,19 +140,30 @@ fun MessageList(
 ) {
     val listState = rememberLazyListState()
 
+    // Detect if user is already near bottom
+    val isAtBottom = remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index
+            lastVisible == messages.lastIndex
+        }
+    }
+
     LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+        if (messages.isNotEmpty() && isAtBottom.value) {
+            listState.animateScrollToItem(messages.lastIndex)
         }
     }
 
     LazyColumn(
         state = listState,
-        modifier = modifier
-            .fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 12.dp)
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            top = 12.dp,
+            bottom = 12.dp
+        )
     ) {
-        items(messages) { message ->
+        items(messages, key = { it.id }) { message ->
             MessageBubble(message)
         }
     }
@@ -151,7 +192,7 @@ fun MessageBubble(message: JournalMessage) {
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = message.timestamp.toString(),
+            text = message.timestamp.toTimeString(),
             color = Color.Gray,
             fontSize = 11.sp,
             modifier = Modifier.padding(start = 12.dp)
@@ -167,48 +208,56 @@ fun MessageInputBar(
     onTextChange: (String) -> Unit,
     onSend: () -> Unit,
 ) {
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .background(SurfaceDark)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
-        TextField(
-            value = text,
-            onValueChange = onTextChange,
-            placeholder = { Text("Write to yourself…") },
-            modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(24.dp)),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFF1E1E1E),
-                unfocusedContainerColor = Color(0xFF1E1E1E),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = Color.White,
-                focusedPlaceholderColor = Color.Gray,
-                unfocusedPlaceholderColor = Color.Gray
-            )
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        IconButton(
-            onClick = onSend,
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    color = Color(0xFF2D5BFF),
-                    shape = CircleShape
-                )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Send,
-                contentDescription = "Send",
-                tint = Color.White
+            TextField(
+                value = text,
+                onValueChange = onTextChange,
+                placeholder = {
+                    Text(
+                        "Message to self…",
+                        color = Color(0xFF8A8A8A)
+                    )
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(22.dp)),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = SurfaceDarkElevated,
+                    unfocusedContainerColor = SurfaceDarkElevated,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = Color.White,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
             )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(
+                onClick = onSend,
+                enabled = text.isNotBlank(),
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (text.isNotBlank()) AccentBlue else Color(0xFF333333)
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "Send",
+                    tint = Color.White
+                )
+            }
         }
     }
 }

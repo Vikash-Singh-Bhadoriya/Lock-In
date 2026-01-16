@@ -2,6 +2,7 @@ package com.vikashsinghapp.lockin.data.repository
 
 import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
+import com.vikashsinghapp.lockin.domain.ExecutionState
 import kotlinx.coroutines.flow.Flow
 
 class JournalRepository(
@@ -16,8 +17,12 @@ class JournalRepository(
 
     suspend fun addMessage(
         content: String,
-        duringPromiseTaskId: Long?
+        executionState: ExecutionState
     ) {
+        val duringPromiseTaskId = when (executionState) {
+            is ExecutionState.Running -> executionState.taskId
+            else -> null
+        }
         journalDao.insert(
             JournalMessage(
                 content = content,

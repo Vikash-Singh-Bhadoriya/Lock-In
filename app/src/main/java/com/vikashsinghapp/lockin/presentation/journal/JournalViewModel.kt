@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
 import com.vikashsinghapp.lockin.data.repository.JournalRepository
+import com.vikashsinghapp.lockin.domain.ExecutionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,13 +25,13 @@ class JournalViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
-    fun sendMessage(text: String) {
+    fun sendMessage(text: String, executionState: ExecutionState) {
         if (text.isBlank()) return
 
         viewModelScope.launch {
             repository.addMessage(
                 content = text,
-                duringPromiseTaskId = null
+                executionState = executionState
             )
         }
     }
