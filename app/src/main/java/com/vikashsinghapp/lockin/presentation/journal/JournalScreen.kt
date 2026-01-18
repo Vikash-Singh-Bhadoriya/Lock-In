@@ -1,19 +1,16 @@
 package com.vikashsinghapp.lockin.presentation.journal
 
-import TaskExecutionOverlay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,29 +25,26 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
-import com.vikashsinghapp.lockin.domain.ExecutionController
 import com.vikashsinghapp.lockin.ui.theme.AccentBlue
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
@@ -64,72 +58,49 @@ fun JournalScreen(
     viewModel: JournalViewModel = hiltViewModel(),
 ) {
     val messages by viewModel.messages.collectAsState()
-    var inputText by remember { mutableStateOf("") }
-
-    val executionController = remember { ExecutionController() }
-    val executionState by executionController.state.collectAsState()
-
+    var inputText by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
-        modifier = modifier.padding(paddingValues),
+        modifier = modifier.fillMaxSize(), // Use fillMaxSize to own the window space
         containerColor = BackgroundDark,
-        contentWindowInsets = WindowInsets.safeDrawing, // IMPORTANT
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "LockIn",
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 18.sp
-                    )
-                },
+                title = { Text("LockIn", color = Color.White, fontSize = 18.sp) },
                 navigationIcon = {
                     IconButton(onClick = {}) {
-                        Icon(
-                            Icons.Default.Menu,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
+                        Icon(Icons.Default.Menu, contentDescription = null, tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SurfaceDark
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceDark)
             )
-            TaskExecutionOverlay(
-                state = executionState,
-                onStop = { executionController.stop() }
+        }
+    ) { innerPadding ->
+        // 2. THE CONTAINER: The Scaffold gives us 'innerPadding' which accounts for the TopBar
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // This pushes content below the TopBar
+        ) {
+            // 3. THE LIST: weight(1f) tells the list to take all available space
+            // but shrink when the keyboard (IME) pushes the input bar up.
+            MessageList(
+                modifier = Modifier.weight(1f),
+                messages = messages
             )
 
-        },
-        bottomBar = {
+            // 4. THE INPUT: imePadding() makes this bar "stick" to the top of the keyboard.
             MessageInputBar(
+                modifier = Modifier.imePadding(),
                 text = inputText,
-                onTextChange = {
-                    inputText = it
-                },
+                onTextChange = { inputText = it },
                 onSend = {
                     if (inputText.isNotBlank()) {
-                        viewModel.sendMessage(inputText.trim(), executionState)
+                        viewModel.sendMessage(inputText.trim())
                         inputText = ""
                     }
                 }
             )
         }
-    ) { padding ->
-//        Column(
-//            modifier = modifier
-//                .fillMaxSize()
-//                .padding(8.dp)
-//        ) {
-        MessageList(
-            messages = messages,
-            modifier = Modifier
-                .padding(padding)
-                .imePadding() // 👈 ONLY message list moves
-
-        )
     }
 }
 
@@ -140,28 +111,25 @@ fun MessageList(
 ) {
     val listState = rememberLazyListState()
 
-    // Detect if user is already near bottom
-    val isAtBottom = remember {
-        derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index
-            lastVisible == messages.lastIndex
-        }
-    }
-
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty() && isAtBottom.value) {
-            listState.animateScrollToItem(messages.lastIndex)
-        }
-    }
+//    // Detect if user is already near bottom
+//    val isAtBottom = remember {
+//        derivedStateOf {
+//            val layoutInfo = listState.layoutInfo
+//            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index
+//            lastVisible == messages.lastIndex
+//        }
+//    }
+//
+//    LaunchedEffect(messages.size) {
+//        if (messages.isNotEmpty() && isAtBottom.value) {
+//            listState.animateScrollToItem(messages.lastIndex)
+//        }
+//    }
 
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            top = 12.dp,
-            bottom = 12.dp
-        )
+        contentPadding = PaddingValues(vertical = 12.dp)
     ) {
         items(messages, key = { it.id }) { message ->
             MessageBubble(message)
@@ -208,13 +176,14 @@ fun MessageInputBar(
     onTextChange: (String) -> Unit,
     onSend: () -> Unit,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(SurfaceDark)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = SurfaceDark,
+        tonalElevation = 2.dp
     ) {
         Row(
+            modifier = modifier
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextField(
@@ -227,7 +196,7 @@ fun MessageInputBar(
                     )
                 },
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(1f) // The text field will occupy all width after other row elements size are done
                     .clip(RoundedCornerShape(22.dp)),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = SurfaceDarkElevated,
