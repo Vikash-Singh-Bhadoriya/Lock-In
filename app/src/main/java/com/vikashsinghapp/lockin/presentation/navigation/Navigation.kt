@@ -14,9 +14,9 @@ import com.vikashsinghapp.lockin.presentation.tomorrow_focus.TomorrowFocusScreen
 @Composable
 fun Navigation(
     // central API that keeps track of the back stack of composables
-    navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.TomorrowFocusScreen.route,
+    navController: NavHostController,
+    startDestination: String = Screen.JournalScreen.route,
 ) {
     // navController must be link to a NavHost
     // which specifies the composable destinations(Screens), that you should be able to navigate

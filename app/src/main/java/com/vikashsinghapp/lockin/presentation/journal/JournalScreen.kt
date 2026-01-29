@@ -1,69 +1,55 @@
 package com.vikashsinghapp.lockin.presentation.journal
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.vikashsinghapp.lockin.data.entity.JournalMessage
-import com.vikashsinghapp.lockin.ui.theme.AccentBlue
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
-import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JournalScreen(
     modifier: Modifier = Modifier,
-    paddingValues: PaddingValues = PaddingValues(),
     viewModel: JournalViewModel = hiltViewModel(),
 ) {
     val messages by viewModel.messages.collectAsState()
     var inputText by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(), // Use fillMaxSize to own the window space
+        // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
+        modifier = modifier.fillMaxSize().systemBarsPadding(), // Use fillMaxSize to own the window space => the system status bar also
         containerColor = BackgroundDark,
         topBar = {
+            // This Top App Bar includes the system status bar also.
+            // If I set the background color to red, the system status bar background color changes to red
             TopAppBar(
                 title = { Text("LockIn", color = Color.White, fontSize = 18.sp) },
                 navigationIcon = {
@@ -75,22 +61,73 @@ fun JournalScreen(
             )
         }
     ) { innerPadding ->
-        // 2. THE CONTAINER: The Scaffold gives us 'innerPadding' which accounts for the TopBar
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding) // This pushes content below the TopBar
+                .imePadding() // <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
         ) {
+            val listState = rememberLazyListState()
+
+            // Auto-scroll ONLY when a new message is added AND user was at bottom
+            LaunchedEffect(messages.size) {
+                if (messages.isNotEmpty()) {
+                    // do not do animateScrollTo => kind of freeze when at the top & add message, scroll laggingly
+                    listState.scrollToItem(messages.lastIndex)
+                }
+            }
+
+/*
+            When the keyboard opens:
+            The semantic intent (“user was at bottom”) is lost
+            We must capture intent BEFORE resize
+            Then restore scroll AFTER resize
+            */
+            // Detect if user is already near bottom
+            var userWasAtBottom by remember { mutableStateOf(true) }
+
+            LaunchedEffect(listState) {
+                snapshotFlow {
+                    val lastVisible =
+                        listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+                    lastVisible == messages.lastIndex
+                }.collect { atBottom ->
+                    userWasAtBottom = atBottom
+                }
+            }
+//            LaunchedEffect(messages.size) {
+//                if (messages.isNotEmpty() && isAtBottom.value) {
+//                    listState.animateScrollToItem(messages.lastIndex)
+//                }
+//            }
+
             // 3. THE LIST: weight(1f) tells the list to take all available space
             // but shrink when the keyboard (IME) pushes the input bar up.
             MessageList(
-                modifier = Modifier.weight(1f),
-                messages = messages
+                modifier = Modifier.weight(1f)
+//                    .border(5.dp, Color.Blue)
+                ,
+                messages = messages,
+                listState = listState,
             )
+            // detect open keyboard
+            val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+            LaunchedEffect(imeBottom) {
+                // Only scroll to bottom if keyboard is open and user was at bottom
+                // not scrolling when not at bottom
+                if (imeBottom > 0 && messages.isNotEmpty() && userWasAtBottom) {
+                    listState.scrollToItem(messages.lastIndex)
+                }
+            }
 
-            // 4. THE INPUT: imePadding() makes this bar "stick" to the top of the keyboard.
+
+
+            // 4. THE INPUT: imePadding() makes this bar "stick" to the top of the keyboard. =>
+            // without it the message input just show statically at the bottom of screen
             MessageInputBar(
-                modifier = Modifier.imePadding(),
+                modifier = Modifier
+//                    .border(2.dp, Color.Red)
+                    .imePadding(),
                 text = inputText,
                 onTextChange = { inputText = it },
                 onSend = {
@@ -100,133 +137,6 @@ fun JournalScreen(
                     }
                 }
             )
-        }
-    }
-}
-
-@Composable
-fun MessageList(
-    modifier: Modifier = Modifier,
-    messages: List<JournalMessage>,
-) {
-    val listState = rememberLazyListState()
-
-//    // Detect if user is already near bottom
-//    val isAtBottom = remember {
-//        derivedStateOf {
-//            val layoutInfo = listState.layoutInfo
-//            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index
-//            lastVisible == messages.lastIndex
-//        }
-//    }
-//
-//    LaunchedEffect(messages.size) {
-//        if (messages.isNotEmpty() && isAtBottom.value) {
-//            listState.animateScrollToItem(messages.lastIndex)
-//        }
-//    }
-
-    LazyColumn(
-        state = listState,
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 12.dp)
-    ) {
-        items(messages, key = { it.id }) { message ->
-            MessageBubble(message)
-        }
-    }
-}
-
-@Composable
-fun MessageBubble(message: JournalMessage) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF1A1A1A))
-                .padding(14.dp)
-        ) {
-            Text(
-                text = message.content,
-                color = Color.White,
-                fontSize = 15.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = message.timestamp.toTimeString(),
-            color = Color.Gray,
-            fontSize = 11.sp,
-            modifier = Modifier.padding(start = 12.dp)
-        )
-    }
-}
-
-
-@Composable
-fun MessageInputBar(
-    modifier: Modifier = Modifier,
-    text: String,
-    onTextChange: (String) -> Unit,
-    onSend: () -> Unit,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = SurfaceDark,
-        tonalElevation = 2.dp
-    ) {
-        Row(
-            modifier = modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextField(
-                value = text,
-                onValueChange = onTextChange,
-                placeholder = {
-                    Text(
-                        "Message to self…",
-                        color = Color(0xFF8A8A8A)
-                    )
-                },
-                modifier = Modifier
-                    .weight(1f) // The text field will occupy all width after other row elements size are done
-                    .clip(RoundedCornerShape(22.dp)),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = SurfaceDarkElevated,
-                    unfocusedContainerColor = SurfaceDarkElevated,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            IconButton(
-                onClick = onSend,
-                enabled = text.isNotBlank(),
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (text.isNotBlank()) AccentBlue else Color(0xFF333333)
-                    )
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send",
-                    tint = Color.White
-                )
-            }
         }
     }
 }
