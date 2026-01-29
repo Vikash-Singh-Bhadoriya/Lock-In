@@ -1,9 +1,9 @@
-package com.vikashsinghapp.lockin.data
+package com.vikashsinghapp.lockin.data.type_converter
 
 import androidx.room.TypeConverter
 import com.vikashsinghapp.lockin.data.entity.PromiseTaskStatus
 
-class Converters {
+class PromiseStatusConverter {
 
     @TypeConverter
     fun fromPromiseStatus(status: PromiseTaskStatus): String = status.name

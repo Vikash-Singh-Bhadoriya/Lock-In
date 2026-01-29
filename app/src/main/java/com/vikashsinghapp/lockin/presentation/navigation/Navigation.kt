@@ -10,13 +10,12 @@ import androidx.navigation.compose.composable
 import com.vikashsinghapp.lockin.presentation.journal.JournalScreen
 import com.vikashsinghapp.lockin.presentation.tomorrow_focus.TomorrowFocusScreen
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Navigation(
     // central API that keeps track of the back stack of composables
     modifier: Modifier = Modifier,
     navController: NavHostController,
-    startDestination: String = Screen.JournalScreen.route,
+    startDestination: String = Screen.TomorrowFocusScreen.route,
 ) {
     // navController must be link to a NavHost
     // which specifies the composable destinations(Screens), that you should be able to navigate

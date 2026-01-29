@@ -1,7 +1,9 @@
 package com.vikashsinghapp.lockin.di
 
 import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
+import com.vikashsinghapp.lockin.data.dao.PromiseDao
 import com.vikashsinghapp.lockin.data.repository.JournalRepository
+import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,5 +19,11 @@ object RepositoryModule {
     fun provideJournalRepository(
         dao: JournalMessageDao
     ): JournalRepository = JournalRepository(dao)
+
+    @Provides
+    @Singleton
+    fun provideTaskRepository(
+        dao: PromiseDao
+    ): PromiseTaskRepository = PromiseTaskRepository(dao)
 
 }
