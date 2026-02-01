@@ -1,4 +1,4 @@
-package com.vikashsinghapp.lockin.presentation.tomorrow_focus
+package com.vikashsinghapp.lockin.presentation.tomorrow_focus.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

@@ -1,6 +1,11 @@
 package com.vikashsinghapp.lockin
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
@@ -21,9 +26,9 @@ class LockInApp : Application() {
 //        var isActivityVisible: Boolean = false
 
         // Notification Channel
-//        const val CHANNEL_ID = "com.vikashsinghapp.intervaltimer.feature_time_interval"
-//        private const val CHANNEL_NAME = "Interval Timer"
-//        private const val CHANNEL_DESCRIPTION = "Timer running & finished notification"
+        const val CHANNEL_ID = "com.vikashsinghapp.lockin.feature_promise_notification"
+        private const val CHANNEL_NAME = "Lock In"
+        private const val CHANNEL_DESCRIPTION = "Notification of Tasks you promise to do today"
 
     }
 
@@ -31,7 +36,7 @@ class LockInApp : Application() {
         super.onCreate()
 
         // create IntervalTimer Notification Channel for Timer Running & Timer Finished Screen
-//        createIntervalTimerNotificationChannel(this)
+        createNotificationChannel(this)
 
         // Obtain the FirebaseAnalytics instance.
         firebaseAnalytics = Firebase.analytics
@@ -77,37 +82,35 @@ class LockInApp : Application() {
 //            .build()
     }
 
-//    private fun createIntervalTimerNotificationChannel(context: Context) {
-//        // Create the NotificationChannel, but only on API 26+ because
-//        // the NotificationChannel class is new and not in the support library
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            // Create separate channel for each type of notification the app issue
-//            val channel = NotificationChannel(
-//                CHANNEL_ID,
-//                CHANNEL_NAME,
-//                NotificationManager.IMPORTANCE_HIGH
-//            ).apply {
-//                //      LIGHT
-//                enableLights(true)
-//
-//                //      SOUND -> It will be needed in TimerFinished Screen
-////                setSound(null, null)
-//
-//                val ringtoneUri =
-//                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-//                val audioAttribute = AudioAttributes.Builder()
-//                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-//                    .build()
-//                setSound(ringtoneUri, audioAttribute)
-//
-//                setShowBadge(true)
-//                description = CHANNEL_DESCRIPTION
-//            }
-//            // Register the channel with the system
-//            val notificationManager =
-//                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//            notificationManager.createNotificationChannel(channel)
-//        }
-//    }
+    private fun createNotificationChannel(context: Context) {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+
+        // Create separate channel for each type of notification the app issue
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            //      LIGHT
+            enableLights(true)
+
+            //      SOUND -> It will be needed in TimerFinished Screen
+//                setSound(null, null)
+
+            val ringtoneUri =
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            val audioAttribute = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            setSound(ringtoneUri, audioAttribute)
+
+            setShowBadge(true)
+            description = CHANNEL_DESCRIPTION
+        }
+        // Register the channel with the system
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
 }

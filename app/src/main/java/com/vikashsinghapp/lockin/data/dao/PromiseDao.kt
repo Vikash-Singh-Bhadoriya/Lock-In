@@ -26,6 +26,9 @@ interface PromiseDao {
     @Query("SELECT * FROM promise_task WHERE status = :status LIMIT 1")
     suspend fun getRunningByStatus(status: PromiseTaskStatus = PromiseTaskStatus.RUNNING): PromiseTask?
 
+    @Query("SELECT * FROM promise_task WHERE id = :id")
+    suspend fun getTaskById(id: Long): PromiseTask?
+
 //    @Query("SELECT * FROM promise_task WHERE startTime >= :dayStart AND startTime < :dayEnd")
 //    A “Plan” is just a collection of tasks with the same planDate.
     @Query("SELECT * FROM promise_task WHERE planDate = :planDate")

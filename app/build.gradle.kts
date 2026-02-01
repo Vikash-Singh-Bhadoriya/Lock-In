@@ -60,6 +60,11 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.room.ktx) // to return Flow
 
+    // DataStore -> Manage preferences (small datasets)
+    // preferences Datastore
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences.core)
+
     // Import the BoM for the Firebase platform
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)

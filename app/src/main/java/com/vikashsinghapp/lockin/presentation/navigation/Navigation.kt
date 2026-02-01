@@ -1,7 +1,5 @@
 package com.vikashsinghapp.lockin.presentation.navigation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -16,7 +14,8 @@ fun Navigation(
     modifier: Modifier = Modifier,
     navController: NavHostController,
     startDestination: String = Screen.TomorrowFocusScreen.route,
-) {
+    shouldShowPermissionRationale: (String) -> Boolean,
+    ) {
     // navController must be link to a NavHost
     // which specifies the composable destinations(Screens), that you should be able to navigate
     NavHost(
@@ -32,7 +31,9 @@ fun Navigation(
         composable(
             route = Screen.TomorrowFocusScreen.route,
         ) { entry ->
-            TomorrowFocusScreen()
+            TomorrowFocusScreen(
+                shouldShowPermissionRationale = shouldShowPermissionRationale
+            )
         }
     }
 }

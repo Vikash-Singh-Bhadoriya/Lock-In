@@ -1,5 +1,11 @@
 package com.vikashsinghapp.lockin.presentation.tomorrow_focus
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,15 +49,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.vikashsinghapp.lockin.presentation.tomorrow_focus.component.PermissionDialog
+import com.vikashsinghapp.lockin.presentation.tomorrow_focus.component.TimeField
+import com.vikashsinghapp.lockin.presentation.tomorrow_focus.component.goToAppSettings
+import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
+import timber.log.Timber
 import java.time.LocalTime
+
+val Context.planDataStore by preferencesDataStore("plan_prefs")
+
+object PlanPrefsKeys {
+    val LOCKED_DATE = stringPreferencesKey("locked_date")
+}
+
 
 // This screen exists so the user can plan tomorrow in under 10 minutes.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,11 +81,38 @@ import java.time.LocalTime
 fun TomorrowFocusScreen(
     modifier: Modifier = Modifier,
     viewModel: TomorrowFocusViewModel = hiltViewModel(),
+    shouldShowPermissionRationale: (String) -> Boolean = { false },
 ) {
 
     val taskList by viewModel.promiseTasks.collectAsState()
 
-    var isLocked by remember { mutableStateOf(false) }
+    val isLocked by viewModel.isLocked.collectAsState()
+    val context = LocalContext.current
+    val dialogQueue = viewModel.visiblePermissionDialogQueue
+
+    val isPostNotificationsPermissionGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        )
+    }
+    // Post Notifications Permission
+    val requestPostNotificationsPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { isGranted ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    viewModel.onPostNotificationsPermissionPermissionResult(
+                        permission = Manifest.permission.POST_NOTIFICATIONS, isGranted = isGranted
+                    )
+                }
+            })
+
 
     Scaffold(
         // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
@@ -82,6 +132,7 @@ fun TomorrowFocusScreen(
             )
         }
     ) { innerPadding ->
+
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -142,7 +193,16 @@ fun TomorrowFocusScreen(
 
                 TextButton(
                     onClick = {
-                        isLocked = true
+                        // I checked here only if PostNotifications Permission is given if user is on Tiramusu
+                        // So, I don't need to check later in IntervalTimerService
+                        if (isPostNotificationsPermissionGranted) {
+                            viewModel.onEvent(TomorrowFocusEvent.LockPlan)
+                        } else if (Build.VERSION.SDK_INT >= 33) {
+                            // this will be called here only, as we should request for permission when we need (to start timer)
+                            requestPostNotificationsPermissionLauncher.launch(
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
+                        }
                     }
                 ) {
                     Text("Save Plan")
@@ -163,6 +223,37 @@ fun TomorrowFocusScreen(
                     .background(Color.Transparent)
                     .clickable(enabled = false) {}
             )
+        }
+        // Show Educational UI
+        // Which includes Rationale explain what the permission is for
+        // & when user permanently decline the permission
+        dialogQueue.reversed().forEach { permission ->
+            PermissionDialog(
+                isPermanentlyDeclined = !shouldShowPermissionRationale(
+                    permission
+                ), onDismiss = viewModel::dismissDialog, onAllow = {
+                    viewModel.dismissDialog()
+                    requestPostNotificationsPermissionLauncher.launch(
+                        permission
+                    )
+                }, onGoToAppSettingsClick = {
+                    context.goToAppSettings()
+                })
+        }
+        // LaunchedEffect will be called on first composition
+        // & when navigate between screens
+        // & will not be called on pause screen
+        LaunchedEffect(key1 = true) {
+            Timber.d("LaunchedEffect(key1 = true) called")
+            viewModel.eventFlow.collect { uiEvent ->
+                when (uiEvent) {
+                    is TomorrowFocusScreenViewModelUiEvent.ScheduleAllPlanTaskAlarm -> {
+                        taskList.forEach { task ->
+                            TaskAlarmScheduler.scheduleTaskStart(context, task)
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -203,7 +294,13 @@ fun TaskBlock(
             verticalAlignment = Alignment.Top
         ) {
             if (isLocked) {
-                Text(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), text = "🔒 $title", color = Color.White)
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    text = "🔒 $title",
+                    color = Color.White
+                )
             } else {
                 OutlinedTextField(
                     modifier = Modifier

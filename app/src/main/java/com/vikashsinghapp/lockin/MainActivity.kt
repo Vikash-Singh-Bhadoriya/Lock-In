@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.app.ActivityCompat
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import com.vikashsinghapp.lockin.presentation.navigation.Navigation
@@ -32,7 +33,14 @@ class MainActivity : ComponentActivity() {
                     color = SurfaceDark
                 ) {
                     val navController = rememberNavController()
-                    Navigation(navController = navController)
+                    Navigation(
+                        navController = navController,
+                        shouldShowPermissionRationale = { permission ->
+                            ActivityCompat.shouldShowRequestPermissionRationale(
+                                this@MainActivity,
+                                permission
+                            )
+                        })
                 }
             }
         }

@@ -6,4 +6,5 @@ sealed class TomorrowFocusEvent {
     data class OnTaskUpdate(val newTask: PromiseTask) : TomorrowFocusEvent()
     data class DeleteTask(val task: PromiseTask) : TomorrowFocusEvent()
     object AddNewTask : TomorrowFocusEvent()
+    object LockPlan : TomorrowFocusEvent()
 }

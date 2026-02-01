@@ -16,6 +16,9 @@ class PromiseTaskRepository(
     suspend fun getRunningByStatus(status: PromiseTaskStatus = PromiseTaskStatus.RUNNING): PromiseTask? =
         promiseTaskDao.getRunningByStatus(status)
 
+    suspend fun getTaskById(id: Long): PromiseTask? =
+        promiseTaskDao.getTaskById(id)
+
     suspend fun addTask(task: PromiseTask) {
         promiseTaskDao.insert(task)
     }
