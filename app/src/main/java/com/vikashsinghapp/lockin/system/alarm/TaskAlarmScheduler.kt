@@ -1,5 +1,6 @@
 package com.vikashsinghapp.lockin.system.alarm
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -13,6 +14,7 @@ import java.time.ZoneId
 
 object TaskAlarmScheduler {
 
+    @SuppressLint("MissingPermission")
     fun scheduleTaskStart(context: Context, task: PromiseTask) {
 
         val alarmManager =

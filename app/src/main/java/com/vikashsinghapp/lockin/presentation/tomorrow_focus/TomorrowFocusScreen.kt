@@ -26,17 +26,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HorizontalRule
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -114,29 +111,29 @@ fun TomorrowFocusScreen(
             })
 
 
-    Scaffold(
+//    Scaffold(
         // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
-        modifier = modifier.fillMaxSize(), // Use fillMaxSize to own the window space => the system status bar also
-        containerColor = BackgroundDark,
-        topBar = {
-            // This Top App Bar includes the system status bar also.
-            // If I set the background color to red, the system status bar background color changes to red
-            TopAppBar(
-                title = { Text("Tomorrow's Focus", color = Color.White, fontSize = 24.sp) },
-                navigationIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Menu, contentDescription = null, tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
-            )
-        }
-    ) { innerPadding ->
+//        modifier = modifier.fillMaxSize(), // Use fillMaxSize to own the window space => the system status bar also
+//        containerColor = BackgroundDark,
+//        topBar = {
+//            // This Top App Bar includes the system status bar also.
+//            // If I set the background color to red, the system status bar background color changes to red
+//            TopAppBar(
+//                title = { Text("Tomorrow's Focus", color = Color.White, fontSize = 24.sp) },
+//                navigationIcon = {
+//                    IconButton(onClick = {}) {
+//                        Icon(Icons.Default.Menu, contentDescription = null, tint = Color.White)
+//                    }
+//                },
+//                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+//            )
+//        }
+//    ) { innerPadding ->
 
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+//                .padding(innerPadding)
                 .background(BackgroundDark)
                 .padding(horizontal = 8.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -256,7 +253,7 @@ fun TomorrowFocusScreen(
             }
         }
     }
-}
+//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -311,7 +308,7 @@ fun TaskBlock(
                         textField = it
                         onTitleChange(textField)
                     },
-                    colors = OutlinedTextFieldDefaults.colors(),
+                    colors = OutlinedTextFieldDefaults.colors(unfocusedTextColor = White, focusedTextColor = White),
                     keyboardActions = KeyboardActions(onDone = {
                         if (textField.isNotEmpty()) {
                             focusManager.clearFocus() // Remove focus from text field

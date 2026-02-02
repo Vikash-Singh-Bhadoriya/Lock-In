@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
-import com.vikashsinghapp.lockin.presentation.navigation.Navigation
+import com.vikashsinghapp.lockin.presentation.navigation.NavigationScaffold
 import com.vikashsinghapp.lockin.ui.theme.LockInTheme
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
                     color = SurfaceDark
                 ) {
                     val navController = rememberNavController()
-                    Navigation(
+                    NavigationScaffold(
                         navController = navController,
                         shouldShowPermissionRationale = { permission ->
                             ActivityCompat.shouldShowRequestPermissionRationale(

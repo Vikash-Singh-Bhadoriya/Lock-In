@@ -5,18 +5,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,12 +17,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
-import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,28 +29,13 @@ fun JournalScreen(
     val messages by viewModel.messages.collectAsState()
     var inputText by rememberSaveable { mutableStateOf("") }
 
-    Scaffold(
-        // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
-        modifier = modifier.fillMaxSize().systemBarsPadding(), // Use fillMaxSize to own the window space => the system status bar also
-        containerColor = BackgroundDark,
-        topBar = {
-            // This Top App Bar includes the system status bar also.
-            // If I set the background color to red, the system status bar background color changes to red
-            TopAppBar(
-                title = { Text("LockIn", color = Color.White, fontSize = 18.sp) },
-                navigationIcon = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Menu, contentDescription = null, tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceDark)
-            )
-        }
-    ) { innerPadding ->
+//    Scaffold(
+//        modifier = modifier.fillMaxSize(),
+//    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // This pushes content below the TopBar
+//                .padding(innerPadding) // This pushes content below the TopBar
                 .imePadding() // <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
         ) {
             val listState = rememberLazyListState()
@@ -139,4 +110,4 @@ fun JournalScreen(
             )
         }
     }
-}
+//}

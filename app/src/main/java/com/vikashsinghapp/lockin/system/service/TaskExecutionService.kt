@@ -9,15 +9,22 @@ import com.vikashsinghapp.lockin.LockInApp.Companion.CHANNEL_ID
 import com.vikashsinghapp.lockin.R
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
+import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
+import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 // The Android system stops a service only when memory is low and it must recover system resources for the activity that has user focus.
 // If the service is bound to an activity that has user focus, it's less likely to be killed;
@@ -30,6 +37,8 @@ class TaskExecutionService : Service() {
 
     @Inject
     lateinit var repository: PromiseTaskRepository
+
+    private var countdownJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -48,16 +57,14 @@ class TaskExecutionService : Service() {
             -1L
         ) ?: return START_NOT_STICKY
 
-        CoroutineScope(Dispatchers.IO).launch {
+        countdownJob?.cancel()
+        countdownJob = CoroutineScope(Dispatchers.IO).launch {
             val task = repository.getTaskById(taskId)
-            Timber.tag(TAG).d( "TaskExecutionService onStartCommand Task : ${task} inside CoroutineScope ")
+            Timber.tag(TAG)
+                .d("TaskExecutionService onStartCommand Task : $task inside CoroutineScope ")
             task?.let {
-                startForeground(
-                    NOTIFICATION_ID,
-                    buildNotification(it)
-                )
-                scheduleEnd(task)
-            }
+                startCountdown(it)
+            } ?: stopSelf()
         }
 
         return START_STICKY
@@ -65,39 +72,85 @@ class TaskExecutionService : Service() {
 
     override fun onBind(intent: Intent?) = null
 
+    override fun onDestroy() {
+        countdownJob?.cancel()
+        super.onDestroy()
+    }
+
     companion object {
         const val NOTIFICATION_ID = 1001
     }
 
+    // Later use CountdownTimer, so do not manually need delay(1000)
+    private suspend fun startCountdown(task: PromiseTask) {
+        withContext(Dispatchers.Main) {
+            val totalDuration =
+                task.endTime.toMs(task.planDate) - task.startTime.toMs(task.planDate)
 
-    private fun scheduleEnd(task: PromiseTask) {
-        val delay = task.endTime.atDate(task.planDate)
-            .atZone(ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli() - System.currentTimeMillis()
+            while (true) {
+                val remainingMillis = task.endTime.atDate(task.planDate)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli() - System.currentTimeMillis()
 
-        CoroutineScope(Dispatchers.Main).launch {
-            delay(delay)
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+                if (remainingMillis <= 0) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                    break
+                }
+
+                val notification = buildNotification(task, totalDuration, remainingMillis)
+                startForeground(NOTIFICATION_ID, notification)
+                delay(1000)
+            }
         }
     }
 
-    private fun buildNotification(task: PromiseTask): Notification {
-//        val minutes = (remainingMillis / 1000) / 60
-//        val seconds = (remainingMillis / 1000) % 60
-//        val timeLeft = String.format("%02d:%02d", minutes, seconds)
-        Timber.tag(TAG).d( "TaskExecutionService buildNotification Task : ${task}")
+    fun LocalTime.toMs(planDate: LocalDate) = this.atDate(planDate)
+        .atZone(ZoneId.systemDefault())
+        .toInstant()
+        .toEpochMilli()
+
+    fun Long.formatTimeLeft(): String {
+        val totalSeconds = this / 1000
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return when {
+            hours > 0 -> String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
+            minutes > 0 -> String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+            else -> String.format(Locale.getDefault(), "%d", seconds)
+        }
+    }
+
+
+
+    private fun buildNotification(
+        task: PromiseTask,
+        totalDuration: Long,
+        remainingMillis: Long,
+    ): Notification {
+        Timber.tag(TAG).d("TaskExecutionService buildNotification Task : $task")
+
+        val contentText =
+            "${task.startTime.formatTime()} – ${task.endTime.formatTime()}"
+
+        val progress =
+            remainingMillis / totalDuration.toFloat()
+
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setOngoing(true)
             // We do not want notifications to flash when updated, or to continuously hog the status bar of the device,you must:
             .setOnlyAlertOnce(true)
+            .setShowWhen(false)
             .setAutoCancel(false)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(task.title)
-//            .setContentText("${task.startTime.formatTime()} – ${task.endTime.formatTime()}       $timeLeft")
+            .setContentTitle("${task.title} ${remainingMillis.formatTimeLeft()}")
+            .setContentText(contentText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(Notification.CATEGORY_SERVICE)
+            .setProgress(100, (progress * 100).roundToInt(), false)
             // Remove Previous Start & Stop Actions
 //            .clearActions()
 //            .addAction(

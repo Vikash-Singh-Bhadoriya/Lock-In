@@ -1,6 +1,7 @@
 package com.vikashsinghapp.lockin.presentation.navigation
 
-sealed class Screen(val route: String) {
-    object JournalScreen: Screen("journal_screen")
-    object TomorrowFocusScreen: Screen("tomorrow_focus_screen")
+sealed class Screen(val route: String, val screenName: String) {
+    object JournalScreen : Screen("journal_screen", "Journal")
+    object TomorrowFocusScreen : Screen("tomorrow_focus_screen", "Tomorrow's Focus")
+    object SettingsScreen : Screen("settings_screen", "Settings")
 }
