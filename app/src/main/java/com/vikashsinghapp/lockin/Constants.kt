@@ -1,5 +1,6 @@
 package com.vikashsinghapp.lockin
 
+import com.vikashsinghapp.lockin.presentation.navigation.Screen
 import com.vikashsinghapp.lockin.presentation.navigation.Screen.JournalScreen
 import com.vikashsinghapp.lockin.presentation.navigation.Screen.SettingsScreen
 import com.vikashsinghapp.lockin.presentation.navigation.Screen.TomorrowFocusScreen
@@ -8,6 +9,6 @@ object Constants {
     const val TAG = "LockInApp"
 
     // Defining allScreens outside the sealed class ensures all objects are initialized before the list is created.
-    val ALL_SCREENS = listOf(JournalScreen, TomorrowFocusScreen, SettingsScreen)
+    val ALL_SCREENS = listOf(Screen.TodayScreen, JournalScreen, TomorrowFocusScreen, SettingsScreen)
 
 }

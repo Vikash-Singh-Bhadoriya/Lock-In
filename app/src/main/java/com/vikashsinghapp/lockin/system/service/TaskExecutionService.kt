@@ -51,6 +51,8 @@ class TaskExecutionService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        // 1. Start foreground IMMEDIATELY with a placeholder notification
+        startForeground(NOTIFICATION_ID, buildPlaceholderNotification())
 
         val taskId = intent?.getLongExtra(
             TaskAlarmScheduler.EXTRA_TASK_ID,
@@ -124,6 +126,19 @@ class TaskExecutionService : Service() {
     }
 
 
+    private fun buildPlaceholderNotification(): Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setShowWhen(false)
+            .setAutoCancel(false)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Starting task...")
+            .setContentText("Preparing your focus session")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .build()
+    }
 
     private fun buildNotification(
         task: PromiseTask,

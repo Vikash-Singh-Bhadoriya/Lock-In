@@ -11,7 +11,7 @@ fun Long.toTimeString(): String {
     return formatter.format(Date(this))
 }
 
-fun LocalTime.formatTime(): String {
-    val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-    return formatter.format(this)
-}
+//fun LocalTime.formatTime(): String {
+//    val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+//    return formatter.format(this)
+//}

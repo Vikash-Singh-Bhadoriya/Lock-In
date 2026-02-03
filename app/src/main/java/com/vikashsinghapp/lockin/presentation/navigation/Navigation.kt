@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.vikashsinghapp.lockin.presentation.journal.JournalScreen
 import com.vikashsinghapp.lockin.presentation.settings.SettingsScreen
+import com.vikashsinghapp.lockin.presentation.today.TodayScreen
 import com.vikashsinghapp.lockin.presentation.tomorrow_focus.TomorrowFocusScreen
 
 @Composable
@@ -14,7 +15,7 @@ fun Navigation(
     // central API that keeps track of the back stack of composables
     modifier: Modifier = Modifier,
     navController: NavHostController,
-    startDestination: String = Screen.JournalScreen.route,
+    startDestination: String = Screen.TodayScreen.route,
     shouldShowPermissionRationale: (String) -> Boolean,
 ) {
     // navController must be link to a NavHost
@@ -39,6 +40,12 @@ fun Navigation(
             TomorrowFocusScreen(
                 shouldShowPermissionRationale = shouldShowPermissionRationale
             )
+        }
+        // composable that represents Screen.TaskScreen.route
+        composable(
+            route = Screen.TodayScreen.route,
+        ) { entry ->
+            TodayScreen()
         }
     }
 }
