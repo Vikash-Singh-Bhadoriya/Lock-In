@@ -12,12 +12,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.time.LocalDate
-import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,14 +38,6 @@ class TomorrowFocusViewModel @Inject constructor(
     val isLocked = planPrefs.isPlanLocked
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
 
-    init {
-        viewModelScope.launch {
-            val todayTasks = repository.getAllPromiseTasks(LocalDate.now()).first()
-            if (todayTasks.isEmpty()) {
-                insertDefaultTasks()
-            }
-        }
-    }
     // visiblePermissionDialogQueue is a state & it will not survive process death
     // & we don't need to, because we check for permission every time when user click on START
     // when we use savedStateHandle here, then it will show notification after process death at starting
@@ -103,21 +92,22 @@ class TomorrowFocusViewModel @Inject constructor(
         }
     }
 
-    private suspend fun insertDefaultTasks() {
-        repository.addTask(
-            PromiseTask(
-                title = "Deep Work",
-                startTime = LocalTime.of(9, 0),
-                endTime = LocalTime.of(11, 30)
-            )
-        )
-        repository.addTask(
-            PromiseTask(
-                title = "Workout",
-                startTime = LocalTime.of(18, 0),
-                endTime = LocalTime.of(19, 0)
-            )
-        )
-    }
+    // TO DO : ADD ANIMATION LATER, that click on add task to add new task
+//    private suspend fun insertDefaultTasks() {
+//        repository.addTask(
+//            PromiseTask(
+//                title = "Deep Work",
+//                startTime = LocalTime.of(9, 0),
+//                endTime = LocalTime.of(11, 30)
+//            )
+//        )
+//        repository.addTask(
+//            PromiseTask(
+//                title = "Workout",
+//                startTime = LocalTime.of(18, 0),
+//                endTime = LocalTime.of(19, 0)
+//            )
+//        )
+//    }
 
 }

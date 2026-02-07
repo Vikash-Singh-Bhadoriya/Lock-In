@@ -36,7 +36,7 @@ class TodayViewModel @Inject constructor(
                 .collect { todayTasks ->
                     _uiState.value = _uiState.value.copy(
 //                        currentTime = System.currentTimeMillis().toTimeString(),
-                        tasks = todayTasks
+                        tasks = todayTasks.sortedBy { it.startTime }
                     )
                 }
 

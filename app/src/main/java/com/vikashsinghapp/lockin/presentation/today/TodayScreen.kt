@@ -2,7 +2,6 @@ package com.vikashsinghapp.lockin.presentation.today
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,17 +25,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.ColorUtils
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
+import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
-import com.vikashsinghapp.lockin.ui.theme.mediaQuery
 import java.time.LocalTime
 
 @Composable
@@ -50,7 +50,8 @@ fun TodayScreen(
         modifier = modifier
             .fillMaxSize()
             .background(SurfaceDark)
-            .padding(16.dp)
+            .padding(end = 16.dp)
+            .padding(start = 8.dp)
     ) {
 //        Spacer(Modifier.height(8.dp))
 //        Text(
@@ -70,64 +71,74 @@ fun TodayScreen(
 
 @Composable
 fun TodayTimeline(tasks: List<PromiseTask>, now: LocalTime, modifier: Modifier = Modifier) {
-    Box(modifier) {
-        // Timeline line
-        Box(
-            Modifier
-                .fillMaxHeight()
-                .width(2.dp)
-                .background(Color(0xFF444444))
-                .align(Alignment.CenterStart)
-                .padding(start = 50.dp)
-        )
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 6.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            itemsIndexed(tasks) { idx, task ->
-                TodayTaskItem(
-                    task = task,
-                    now = now,
-                )
-            }
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(bottom = 16.dp),
+        // cannot break the timeline line
+//        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        itemsIndexed(tasks) { idx, task ->
+            TodayTaskItem(
+                task = task,
+                now = now,
+                isFirst = idx == 0,
+                isLast = idx == tasks.lastIndex
+            )
         }
     }
 }
 
 @Composable
-fun TodayTaskItem(task: PromiseTask, now: LocalTime) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        // Timeline dot
-        Column(
+fun TodayTaskItem(
+    task: PromiseTask,
+    now: LocalTime,
+    isFirst: Boolean,
+    isLast: Boolean,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.height(IntrinsicSize.Min) // Ensures children match tallest child
+    ) {
+        // Timeline column with drawBehind for line
+        Box(
             Modifier
                 .width(40.dp)
-                .height(IntrinsicSize.Min),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxHeight()
+                .drawBehind {
+                    val centerX = size.width / 2
+                    val dotRadius = if (task.isCurrent(now)) 7.dp.toPx() else 5.dp.toPx()
+                    val centerY = size.height / 2
+                    val lineColor = Color(0xFF444444)
+                    // Make the line above the circle node
+                    if (!isFirst) {
+                        drawLine(
+                            color = lineColor,
+                            start = Offset(centerX, 0f),
+                            end = Offset(centerX, centerY - dotRadius),
+                            strokeWidth = 6f
+                        )
+                    }
+                    // Make the line below the circle node
+                    if (!isLast) {
+                        drawLine(
+                            color = lineColor,
+                            start = Offset(
+                                centerX,
+                                centerY + dotRadius
+                            ),
+                            end = Offset(centerX, size.height),
+                            strokeWidth = 6f
+                        )
+                    }
+                },
+            contentAlignment = Alignment.Center
         ) {
-//            if (!isFirst) Box(
-//                Modifier
-//                    .width(2.dp)
-//                    .weight(1f)
-//                    .background(Color(0xFF444444))
-//            )
-
             Box(
                 Modifier
-                    .size(if (task.isCurrent(now)) 14.dp else 10.dp)
+                    .size(12.dp)
+                    .clip(CircleShape)
                     .background(
-                        if (task.isCurrent(now)) Color(0xFF2D5BFF) else Color(0xFF888888),
-                        shape = MaterialTheme.shapes.small
-                    )
-                    .mediaQuery(
-                        task.isCurrent(now),
-                        Modifier.border(3.dp, Color(
-                            ColorUtils.blendARGB(
-                                Color(0xFF2D5BFF).toArgb(),
-                                Color.White.toArgb(),
-                                0.35f
-                            )
-                        ), MaterialTheme.shapes.small)
+                        if (task.isCurrent(now)) Color(0xFF2D5BFF) else Color(0xFF888888)
                     )
             )
         }
@@ -136,6 +147,7 @@ fun TodayTaskItem(task: PromiseTask, now: LocalTime) {
             Modifier
                 .weight(1f)
                 .padding(start = 8.dp)
+                .padding(vertical = 12.dp)
                 .clip(MaterialTheme.shapes.medium)
                 .background(
                     when {
@@ -143,9 +155,10 @@ fun TodayTaskItem(task: PromiseTask, now: LocalTime) {
                         else -> SurfaceDarkElevated
                     }
                 )
-                .mediaQuery(
-                    task.isCurrent(now),
-                    Modifier.border(1.dp, Color.Blue, MaterialTheme.shapes.medium)
+                .border(
+                    width = if (task.isCurrent(now)) 1.dp else 0.dp,
+                    color = if (task.isCurrent(now)) Color(0xFF2D5BFF) else Color.Transparent,
+                    shape = MaterialTheme.shapes.medium
                 )
                 .padding(16.dp)
         ) {
@@ -157,24 +170,10 @@ fun TodayTaskItem(task: PromiseTask, now: LocalTime) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "${task.startTime} – ${task.endTime}",
+                text = "${task.startTime.formatTime()} – ${task.endTime.formatTime()}",
                 color = Color(0xFFB0B0B0),
                 style = MaterialTheme.typography.bodySmall
             )
-            // Category badge
-//            Box(
-//                Modifier
-//                    .align(Alignment.TopEnd)
-//                    .clip(MaterialTheme.shapes.small)
-//                    .background(task.category.color)
-//                    .padding(horizontal = 8.dp, vertical = 2.dp)
-//            ) {
-//                Text(
-//                    text = task.category.label,
-//                    color = Color.White,
-//                    style = MaterialTheme.typography.labelSmall
-//                )
-//            }
         }
     }
 }

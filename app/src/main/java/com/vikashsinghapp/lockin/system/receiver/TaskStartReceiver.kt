@@ -5,10 +5,15 @@ import android.content.Context
 import android.content.Intent
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import com.vikashsinghapp.lockin.system.service.TaskExecutionService
+import timber.log.Timber
 
 class TaskStartReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        Timber.tag("ALARM_DEBUG").d(
+            "Alarm fired at ${System.currentTimeMillis()}"
+        )
+
         val taskId = intent.getLongExtra(
             TaskAlarmScheduler.EXTRA_TASK_ID,
             -1L

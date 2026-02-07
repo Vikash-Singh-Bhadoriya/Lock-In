@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "22ddfaed71aed3196796a8e5f8b71f12",
+    "identityHash": "883100a35cef949f2c605adefa97b02f",
     "entities": [
       {
         "tableName": "promise_task",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `planDate` TEXT NOT NULL, `title` TEXT NOT NULL, `startTime` TEXT NOT NULL, `endTime` TEXT NOT NULL, `status` TEXT NOT NULL, `breakReason` TEXT, `actualEndTime` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `planDate` TEXT NOT NULL, `title` TEXT NOT NULL, `startTime` TEXT NOT NULL, `endTime` TEXT NOT NULL, `status` TEXT NOT NULL, `note` TEXT, `actualEndTime` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -45,8 +45,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "breakReason",
-            "columnName": "breakReason",
+            "fieldPath": "note",
+            "columnName": "note",
             "affinity": "TEXT"
           },
           {
@@ -154,7 +154,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '22ddfaed71aed3196796a8e5f8b71f12')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '883100a35cef949f2c605adefa97b02f')"
     ]
   }
 }

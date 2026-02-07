@@ -1,6 +1,7 @@
 package com.vikashsinghapp.lockin
 
 import android.app.Application
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -26,9 +27,8 @@ class LockInApp : Application() {
 //        var isActivityVisible: Boolean = false
 
         // Notification Channel
-        const val CHANNEL_ID = "com.vikashsinghapp.lockin.feature_promise_notification"
-        private const val CHANNEL_NAME = "Lock In"
-        private const val CHANNEL_DESCRIPTION = "Notification of Tasks you promise to do today"
+        const val CHANNEL_ID = "com.vikashsinghapp.lockin.notification"
+        const val ALARM_CHANNEL_ID = "lockin_alarm_channel"
 
     }
 
@@ -42,9 +42,9 @@ class LockInApp : Application() {
         firebaseAnalytics = Firebase.analytics
 
 //        if (BuildConfig.DEBUG) {
-            // DebugTree() -Automatically infers the tag from the calling class.
+        // DebugTree() -Automatically infers the tag from the calling class.
         Timber.plant(Timber.DebugTree())
-            // TOd0 : Put same TAG here
+        // TOd0 : Put same TAG here
 //            Timber.tag(TAG)
 //        }
 
@@ -89,7 +89,7 @@ class LockInApp : Application() {
         // Create separate channel for each type of notification the app issue
         val channel = NotificationChannel(
             CHANNEL_ID,
-            CHANNEL_NAME,
+            "Lock In",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             //      LIGHT
@@ -98,19 +98,40 @@ class LockInApp : Application() {
             //      SOUND -> It will be needed in TimerFinished Screen
 //                setSound(null, null)
 
-            val ringtoneUri =
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val audioAttribute = AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-            setSound(ringtoneUri, audioAttribute)
+//            val ringtoneUri =
+//                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+//            val audioAttribute = AudioAttributes.Builder()
+//                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+//                .build()
+//            setSound(ringtoneUri, audioAttribute)
 
             setShowBadge(true)
-            description = CHANNEL_DESCRIPTION
+            description = "Notification of Tasks you promise to do today"
         }
+        val alarmChannel = NotificationChannel(
+            ALARM_CHANNEL_ID,
+            "Focus & Alarms",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Critical focus task alarms"
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+
+            enableVibration(true)
+            enableLights(true)
+
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+        }
+
         // Register the channel with the system
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(alarmChannel)
     }
 }

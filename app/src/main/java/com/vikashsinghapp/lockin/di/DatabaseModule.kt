@@ -30,14 +30,17 @@ object DatabaseModule {
     }
 
     @Provides
+    @Singleton
     fun provideJournalDao(db: LockInDatabase): JournalMessageDao =
         db.journalMessageDao()
 
     @Provides
+    @Singleton
     fun providePromiseDao(db: LockInDatabase): PromiseDao =
         db.promiseDao()
 
     @Provides
+    @Singleton
     fun provideDayReflectionDao(db: LockInDatabase): DayReflectionDao =
         db.dayReflectionDao()
 }

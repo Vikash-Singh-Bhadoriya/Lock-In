@@ -53,6 +53,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -69,6 +70,7 @@ val Context.planDataStore by preferencesDataStore("plan_prefs")
 
 object PlanPrefsKeys {
     val LOCKED_DATE = stringPreferencesKey("locked_date")
+    val AUTO_DISMISS_MINUTES = longPreferencesKey("auto_dismiss_minutes")
 }
 
 
@@ -112,7 +114,7 @@ fun TomorrowFocusScreen(
 
 
 //    Scaffold(
-        // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
+    // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
 //        modifier = modifier.fillMaxSize(), // Use fillMaxSize to own the window space => the system status bar also
 //        containerColor = BackgroundDark,
 //        topBar = {
@@ -130,129 +132,129 @@ fun TomorrowFocusScreen(
 //        }
 //    ) { innerPadding ->
 
-        Column(
-            modifier = modifier
-                .fillMaxSize()
+    Column(
+        modifier = modifier
+            .fillMaxSize()
 //                .padding(innerPadding)
-                .background(BackgroundDark)
-                .padding(horizontal = 8.dp, vertical = 10.dp),
+            .background(BackgroundDark)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Start)
+                .padding(start = 8.dp),
+            text = "Plan your day with intention",
+            color = Color.Gray,
+            fontSize = 15.sp
+        )
+        val listState = rememberLazyListState()
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            contentPadding = PaddingValues(12.dp)
         ) {
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Start)
-                    .padding(start = 8.dp),
-                text = "Plan your day with intention",
-                color = Color.Gray,
-                fontSize = 15.sp
-            )
-            val listState = rememberLazyListState()
+            items(taskList, key = { it.id }) { task ->
+                TaskBlock(
+                    modifier = modifier,
+                    title = task.title,
+                    startTime = task.startTime,
+                    endTime = task.endTime,
+                    onTitleChange = { title ->
+                        viewModel.onEvent(TomorrowFocusEvent.OnTaskUpdate(task.copy(title = title)))
+                    },
+                    onStartTimeChange = { startTime ->
+                        viewModel.onEvent(TomorrowFocusEvent.OnTaskUpdate(task.copy(startTime = startTime)))
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(12.dp)
-            ) {
-                items(taskList, key = { it.id }) { task ->
-                    TaskBlock(
-                        modifier = modifier,
-                        title = task.title,
-                        startTime = task.startTime,
-                        endTime = task.endTime,
-                        onTitleChange = { title ->
-                            viewModel.onEvent(TomorrowFocusEvent.OnTaskUpdate(task.copy(title = title)))
-                        },
-                        onStartTimeChange = { startTime ->
-                            viewModel.onEvent(TomorrowFocusEvent.OnTaskUpdate(task.copy(startTime = startTime)))
-
-                        },
-                        onEndTimeChange = { endTime ->
-                            viewModel.onEvent(TomorrowFocusEvent.OnTaskUpdate(task.copy(endTime = endTime)))
-                        }, onDeleteTask = {
-                            viewModel.onEvent(TomorrowFocusEvent.DeleteTask(task))
-                        },
-                        isLocked = isLocked
-                    )
-                }
-            }
-
-            if (!isLocked) {
-                TextButton(
-                    onClick = {
-                        viewModel.onEvent(TomorrowFocusEvent.AddNewTask)
-                    }
-                ) {
-                    Text("Add Task")
-                }
-
-                TextButton(
-                    onClick = {
-                        // I checked here only if PostNotifications Permission is given if user is on Tiramusu
-                        // So, I don't need to check later in IntervalTimerService
-                        if (isPostNotificationsPermissionGranted) {
-                            viewModel.onEvent(TomorrowFocusEvent.LockPlan)
-                        } else if (Build.VERSION.SDK_INT >= 33) {
-                            // this will be called here only, as we should request for permission when we need (to start timer)
-                            requestPostNotificationsPermissionLauncher.launch(
-                                Manifest.permission.POST_NOTIFICATIONS
-                            )
-                        }
-                    }
-                ) {
-                    Text("Save Plan")
-                }
-            } else {
-                Text(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    text = "🔒 Plan locked",
-                    color = Color.White
+                    },
+                    onEndTimeChange = { endTime ->
+                        viewModel.onEvent(TomorrowFocusEvent.OnTaskUpdate(task.copy(endTime = endTime)))
+                    }, onDeleteTask = {
+                        viewModel.onEvent(TomorrowFocusEvent.DeleteTask(task))
+                    },
+                    isLocked = isLocked
                 )
             }
         }
-        if (isLocked) {
-            // cannot click on any of button on the screen when plan locked
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Transparent)
-                    .clickable(enabled = false) {}
+
+        if (!isLocked) {
+            TextButton(
+                onClick = {
+                    viewModel.onEvent(TomorrowFocusEvent.AddNewTask)
+                }
+            ) {
+                Text("Add Task")
+            }
+
+            TextButton(
+                onClick = {
+                    // I checked here only if PostNotifications Permission is given if user is on Tiramusu
+                    // So, I don't need to check later in IntervalTimerService
+                    if (isPostNotificationsPermissionGranted) {
+                        viewModel.onEvent(TomorrowFocusEvent.LockPlan)
+                    } else if (Build.VERSION.SDK_INT >= 33) {
+                        // this will be called here only, as we should request for permission when we need (to start timer)
+                        requestPostNotificationsPermissionLauncher.launch(
+                            Manifest.permission.POST_NOTIFICATIONS
+                        )
+                    }
+                }
+            ) {
+                Text("Save Plan")
+            }
+        } else {
+            Text(
+                modifier = Modifier.padding(vertical = 8.dp),
+                text = "🔒 Plan locked",
+                color = Color.White
             )
         }
-        // Show Educational UI
-        // Which includes Rationale explain what the permission is for
-        // & when user permanently decline the permission
-        dialogQueue.reversed().forEach { permission ->
-            PermissionDialog(
-                isPermanentlyDeclined = !shouldShowPermissionRationale(
+    }
+    if (isLocked) {
+        // cannot click on any of button on the screen when plan locked
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .clickable(enabled = false) {}
+        )
+    }
+    // Show Educational UI
+    // Which includes Rationale explain what the permission is for
+    // & when user permanently decline the permission
+    dialogQueue.reversed().forEach { permission ->
+        PermissionDialog(
+            isPermanentlyDeclined = !shouldShowPermissionRationale(
+                permission
+            ), onDismiss = viewModel::dismissDialog, onAllow = {
+                viewModel.dismissDialog()
+                requestPostNotificationsPermissionLauncher.launch(
                     permission
-                ), onDismiss = viewModel::dismissDialog, onAllow = {
-                    viewModel.dismissDialog()
-                    requestPostNotificationsPermissionLauncher.launch(
-                        permission
-                    )
-                }, onGoToAppSettingsClick = {
-                    context.goToAppSettings()
-                })
-        }
-        // LaunchedEffect will be called on first composition
-        // & when navigate between screens
-        // & will not be called on pause screen
-        LaunchedEffect(key1 = true) {
-            Timber.d("LaunchedEffect(key1 = true) called")
-            viewModel.eventFlow.collect { uiEvent ->
-                when (uiEvent) {
-                    is TomorrowFocusScreenViewModelUiEvent.ScheduleAllPlanTaskAlarm -> {
-                        taskList.forEach { task ->
-                            TaskAlarmScheduler.scheduleTaskStart(context, task)
-                        }
+                )
+            }, onGoToAppSettingsClick = {
+                context.goToAppSettings()
+            })
+    }
+    // LaunchedEffect will be called on first composition
+    // & when navigate between screens
+    // & will not be called on pause screen
+    LaunchedEffect(key1 = true) {
+        Timber.d("LaunchedEffect(key1 = true) called")
+        viewModel.eventFlow.collect { uiEvent ->
+            when (uiEvent) {
+                is TomorrowFocusScreenViewModelUiEvent.ScheduleAllPlanTaskAlarm -> {
+                    taskList.forEach { task ->
+                        TaskAlarmScheduler.scheduleTaskStart(context, task)
                     }
                 }
             }
         }
     }
+}
 //}
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -308,7 +310,10 @@ fun TaskBlock(
                         textField = it
                         onTitleChange(textField)
                     },
-                    colors = OutlinedTextFieldDefaults.colors(unfocusedTextColor = White, focusedTextColor = White),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedTextColor = White,
+                        focusedTextColor = White
+                    ),
                     keyboardActions = KeyboardActions(onDone = {
                         if (textField.isNotEmpty()) {
                             focusManager.clearFocus() // Remove focus from text field

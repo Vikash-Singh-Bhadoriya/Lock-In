@@ -2,6 +2,7 @@ package com.vikashsinghapp.lockin.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.vikashsinghapp.lockin.presentation.task_status.TaskEndStatus
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -14,8 +15,9 @@ data class PromiseTask(
     val title: String,
     val startTime: LocalTime = LocalTime.now(),
     val endTime: LocalTime = LocalTime.now().plusMinutes(15),
-    val status: PromiseTaskStatus = PromiseTaskStatus.NOT_STARTED,
+    val status: TaskEndStatus = TaskEndStatus.NONE,
+//    val status: PromiseTaskStatus = PromiseTaskStatus.NOT_STARTED,
 
-    val breakReason: String? = null, // "Phone", "P*rn", "Fatigue"
+    val note: String? = null, // "Phone", "P*rn", "Fatigue"
     val actualEndTime: Long? = null
 )

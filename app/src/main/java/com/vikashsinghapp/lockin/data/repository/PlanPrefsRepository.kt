@@ -15,12 +15,18 @@ class PlanPrefsRepository(private val context: Context) {
             val lockedDate = prefs[PlanPrefsKeys.LOCKED_DATE]
             lockedDate == LocalDate.now().toString()
         }
+    val autoDismissMinutes: Flow<Long> =
+        context.planDataStore.data.map { prefs ->
+            prefs[PlanPrefsKeys.AUTO_DISMISS_MINUTES] ?: 30
+        }
 
     suspend fun lockPlanForToday() {
         context.planDataStore.edit { prefs ->
             prefs[PlanPrefsKeys.LOCKED_DATE] = LocalDate.now().toString()
         }
     }
+
+    // TO DO: Add autoDimiss Minutes update,delete code
 
     suspend fun clearLock() {
         context.planDataStore.edit { prefs ->

@@ -7,7 +7,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
-import com.vikashsinghapp.lockin.data.entity.PromiseTaskStatus
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -23,8 +22,8 @@ interface PromiseDao {
     @Delete
     suspend fun delete(promise: PromiseTask)
 
-    @Query("SELECT * FROM promise_task WHERE status = :status LIMIT 1")
-    suspend fun getRunningByStatus(status: PromiseTaskStatus = PromiseTaskStatus.RUNNING): PromiseTask?
+//    @Query("SELECT * FROM promise_task WHERE status = :status LIMIT 1")
+//    suspend fun getRunningByStatus(status: PromiseTaskStatus = PromiseTaskStatus.RUNNING): PromiseTask?
 
     @Query("SELECT * FROM promise_task WHERE id = :id")
     suspend fun getTaskById(id: Long): PromiseTask?
