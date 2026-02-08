@@ -22,9 +22,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -186,11 +189,16 @@ fun NoteInputArea(
 
     onValueChange: (String) -> Unit
 ) {
+    val focusRequester = remember { FocusRequester() }
     Box(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 120.dp) // Minimum height for the text area
             .clip(RoundedCornerShape(8.dp))
+            .focusRequester(focusRequester)
+            .clickable {
+                focusRequester.requestFocus()
+            }
             .background(SurfaceDarkElevated) // Matches your theme
             .padding(16.dp)
     ) {

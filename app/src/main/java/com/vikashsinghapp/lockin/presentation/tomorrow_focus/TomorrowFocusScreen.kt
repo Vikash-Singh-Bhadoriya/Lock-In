@@ -66,14 +66,6 @@ import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
 import timber.log.Timber
 import java.time.LocalTime
 
-val Context.planDataStore by preferencesDataStore("plan_prefs")
-
-object PlanPrefsKeys {
-    val LOCKED_DATE = stringPreferencesKey("locked_date")
-    val AUTO_DISMISS_MINUTES = longPreferencesKey("auto_dismiss_minutes")
-}
-
-
 // This screen exists so the user can plan tomorrow in under 10 minutes.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,6 +92,7 @@ fun TomorrowFocusScreen(
             }
         )
     }
+
     // Post Notifications Permission
     val requestPostNotificationsPermissionLauncher =
         rememberLauncherForActivityResult(

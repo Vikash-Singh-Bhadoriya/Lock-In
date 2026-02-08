@@ -4,10 +4,12 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.RingtoneManager
+import timber.log.Timber
 
 class AlarmPlayer(private val context: Context) {
 
     private var mediaPlayer: MediaPlayer? = null
+    private var wasPlaying = false
 
     fun start() {
         if (mediaPlayer != null) return
@@ -24,22 +26,47 @@ class AlarmPlayer(private val context: Context) {
             setDataSource(context, uri)
             isLooping = true
             prepare()
-            setVolume(1f, 1f)
             start()
+            wasPlaying = true
         }
     }
 
-    fun reduceVolume() {
-        mediaPlayer?.setVolume(0.2f, 0.2f)
+
+    /** Pause alarm while user is marking status */
+    fun pauseAlarm() {
+        mediaPlayer?.let {
+            if (it.isPlaying) {
+                it.pause()
+                wasPlaying = true
+                Timber.d("AlarmPlayer paused temporarily")
+            }
+        }
     }
 
-    fun restoreVolume() {
-        mediaPlayer?.setVolume(1f, 1f)
+    /** Resume alarm if user exits without submitting */
+    fun resumeAlarm() {
+        mediaPlayer?.let {
+            if (!it.isPlaying && wasPlaying) {
+                it.start()
+                Timber.d("AlarmPlayer resumed")
+            }
+        }
     }
+//    fun reduceVolume() {
+//        Timber.d("AlarmPlayer Reducing alarm volume")
+//        // IT IS NOT WORKING,
+//        mediaPlayer?.setVolume(0f, 0f)
+//    }
+
+//    fun restoreVolume() {
+//        Timber.d("AlarmPlayer RESTORED alarm volume")
+//        mediaPlayer?.setVolume(1f, 1f)
+//    }
 
     fun stop() {
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
+        wasPlaying = false
     }
 }

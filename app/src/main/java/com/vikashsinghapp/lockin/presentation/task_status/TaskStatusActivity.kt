@@ -1,5 +1,6 @@
 package com.vikashsinghapp.lockin.presentation.task_status
 
+import android.app.NotificationManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -7,16 +8,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.lifecycleScope
 import com.vikashsinghapp.lockin.MainActivity
+import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
 import com.vikashsinghapp.lockin.system.alarm.AlarmPlayer
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
+import com.vikashsinghapp.lockin.system.service.TaskExecutionService.Companion.BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class TaskStatusActivity : ComponentActivity() {
 
     @Inject lateinit var alarmPlayer: AlarmPlayer
+    @Inject lateinit var userPrefs: PlanPrefsRepository
 
     private var submitted = false
 
@@ -32,9 +38,6 @@ class TaskStatusActivity : ComponentActivity() {
               // Do nothing
         }
 
-        // Reduce alarm volume while marking
-        alarmPlayer.reduceVolume()
-
         setContent {
             TaskStatusMarkScreen(
                 taskId = intent.getLongExtra(
@@ -44,16 +47,31 @@ class TaskStatusActivity : ComponentActivity() {
                 onNavigateBack = {
                     submitted = true
                     alarmPlayer.stop()
+
+                    lifecycleScope.launch {
+                        userPrefs.clearPendingTask()
+                    }
+                    val manager =
+                        getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+
+                    manager.cancel(BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID)
                     goToMain()
                 }
             )
         }
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onResume() {
+        super.onResume()
+        // 🔇 Pause alarm while user is marking status
+        alarmPlayer.pauseAlarm()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // 🔊 Resume alarm ONLY if user escaped without submitting
         if (!submitted) {
-            alarmPlayer.restoreVolume()
+            alarmPlayer.resumeAlarm()
         }
     }
 

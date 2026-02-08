@@ -6,9 +6,15 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.CountDownTimer
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import com.vikashsinghapp.lockin.Constants.TAG
 import com.vikashsinghapp.lockin.LockInApp
 import com.vikashsinghapp.lockin.LockInApp.Companion.CHANNEL_ID
@@ -86,11 +92,51 @@ class TaskExecutionService : Service() {
             Timber.tag(TAG)
                 .d("TaskExecutionService onStartCommand Task : $task inside CoroutineScope ")
             task?.let {
+
+                val pending = userPrefs.pendingTaskId.first()
+                if (pending != null) {
+                    Timber.e("BLOCKED: Pending task $pending not marked")
+
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    showPendingBlockNotification(task)
+                    stopSelf()
+                    return@launch
+                }
+
                 startCountdown(it)
             } ?: stopSelf()
         }
 
         return START_STICKY
+    }
+
+    private fun showPendingBlockNotification(task: PromiseTask) {
+        val intent = Intent(this, TaskStatusActivity::class.java).apply {
+            putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, task.id)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+        val pi = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, LockInApp.ALARM_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_app_notification)
+            .setContentTitle("Action required")
+            .setContentText("Mark your previous focus block ${task.title} ${task.startTime.formatTime()} – ${task.endTime.formatTime()}")
+            .setOngoing(true)
+            // We do not want notifications to flash when updated, or to continuously hog the status bar of the device,you must:
+            .setOnlyAlertOnce(true)
+            .setShowWhen(false)
+            .setAutoCancel(false)
+            .setContentIntent(pi)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .build()
+
+        getSystemService(NotificationManager::class.java)
+            .notify(BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID, notification)
     }
 
     override fun onBind(intent: Intent?) = null
@@ -115,6 +161,7 @@ class TaskExecutionService : Service() {
         val intent = Intent(this, TaskStatusActivity::class.java).apply {
             putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
+//            or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
         return PendingIntent.getActivity(
@@ -156,9 +203,14 @@ class TaskExecutionService : Service() {
         Timber.tag("TASK_ID").d("startCountdown TASK ID ${task.id}")
 
         Timber.tag(TAG).d("HELLO    SHOWING markTaskStatusNotification")
+
+        // 🔐 Persist reality FIRST
+        userPrefs.setPendingTask(task.id)
         stopForeground(STOP_FOREGROUND_REMOVE)
 
         alarmPlayer.start()
+
+        vibrateFor2Seconds()
 
 
         val markTaskStatusNotification = NotificationCompat.Builder(
@@ -187,27 +239,35 @@ class TaskExecutionService : Service() {
             markTaskStatusNotification
         )
 
+//        // SHOW Mark Task Status Screen over other apps
+        // IF full screen intent fails, show an overlay
+        if (Settings.canDrawOverlays(this)) {
+            val intent = Intent(this, TaskStatusActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, task.id)
+            }
+            this.startActivity(intent)
+        } else {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+            intent.data = "package:$packageName".toUri()
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        }
+
         // HOW TO get datastore in TaskExecutionService
         // will this HANDLER code work, bcs just after showing the notification, I am doing stopForeground, stopSelf
 
         Timber.d("userPrefs.autoDismissMinutes.first() : ${userPrefs.autoDismissMinutes.first()}")
 
         // Auto-stop after user-configured duration (30 min example)
+        // THIS FOREGROUND SERVICE WILL RUN UNTIL Alarm Player Duration 30 min like expire
         android.os.Handler(Looper.getMainLooper()).postDelayed({
             alarmPlayer.stop()
 
             // after delay timer ends, when user open the app
             // => HOW I WILL KNOW THAT their is pending mark STATUS required
             stopSelf()
-        }, userPrefs.autoDismissMinutes.first() * 60000L)
-
-
-//        // SHOW Mark Task Status Screen over other apps
-//        if (Settings.canDrawOverlays(this)) {
-//            val intent = Intent(this, TaskStatusActivity::class.java)
-//            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-//            startActivity(intent)
-//        }
+        }, userPrefs.autoDismissMinutes.first() * 60 * 1000L)
 
 //        stopSelf()
     }
@@ -229,6 +289,16 @@ class TaskExecutionService : Service() {
         }
     }
 
+    private fun vibrateFor2Seconds() {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            manager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(VIBRATOR_SERVICE) as Vibrator
+        }
+        vibrator.vibrate(VibrationEffect.createOneShot(2000L, VibrationEffect.DEFAULT_AMPLITUDE))
+    }
 
     fun buildPlaceholderNotification() =
         NotificationCompat.Builder(this, CHANNEL_ID)

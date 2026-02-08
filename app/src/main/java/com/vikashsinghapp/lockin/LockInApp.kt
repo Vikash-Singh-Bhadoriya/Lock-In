@@ -5,8 +5,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.RingtoneManager
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
@@ -116,16 +114,17 @@ class LockInApp : Application() {
             description = "Critical focus task alarms"
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
-            enableVibration(true)
+//            enableVibration(true)
             enableLights(true)
+            setSound(null, null) // No sound, only vibration
 
-            setSound(
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
+//            setSound(
+//                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+//                AudioAttributes.Builder()
+//                    .setUsage(AudioAttributes.USAGE_ALARM)
+//                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+//                    .build()
+//            )
         }
 
         // Register the channel with the system
@@ -134,4 +133,5 @@ class LockInApp : Application() {
         notificationManager.createNotificationChannel(channel)
         notificationManager.createNotificationChannel(alarmChannel)
     }
+
 }

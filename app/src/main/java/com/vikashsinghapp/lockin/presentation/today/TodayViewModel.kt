@@ -21,8 +21,13 @@ data class TodayUiState(
 
 @HiltViewModel
 class TodayViewModel @Inject constructor(
-    private val promiseRepository: PromiseTaskRepository
+    private val promiseRepository: PromiseTaskRepository,
+//    prefs: PlanPrefsRepository
 ) : ViewModel() {
+
+//    val hasPendingBlock = prefs.pendingTaskId
+//        .map { it != null }
+//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
 
     private val _uiState = MutableStateFlow(TodayUiState())
     val uiState: StateFlow<TodayUiState> = _uiState.asStateFlow()
