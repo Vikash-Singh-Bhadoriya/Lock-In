@@ -23,6 +23,7 @@ import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import com.vikashsinghapp.lockin.formatTime
+import com.vikashsinghapp.lockin.presentation.task_distracted_reflection.TaskReflectionActivity
 import com.vikashsinghapp.lockin.presentation.task_status.TaskStatusActivity
 import com.vikashsinghapp.lockin.system.alarm.AlarmPlayer
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
@@ -81,16 +82,16 @@ class TaskExecutionService : Service() {
                     -1L
                 )
                 serviceScope.launch {
-                    countdownJob?.cancel()
 
                     // Persist reality
                     userPrefs.setPendingTask(taskId)
 
-                    alarmPlayer.start()
-                    vibrateFor2Seconds()
+                    // No need do vibration & sound => as user click just now
+//                    alarmPlayer.start()
+//                    vibrateFor2Seconds()
                 }
                 startActivity(
-                    Intent(this, TaskStatusActivity::class.java).apply {
+                    Intent(this, TaskReflectionActivity::class.java).apply {
                         setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
                     }
@@ -150,7 +151,7 @@ class TaskExecutionService : Service() {
         val notification = NotificationCompat.Builder(this, LockInApp.ALARM_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_app_notification)
             .setContentTitle("Action required")
-            .setContentText("Mark your previous focus block ${task.title} ${task.startTime.formatTime()} – ${task.endTime.formatTime()}")
+            .setContentText("Mark your previous focus block \n${task.title} ${task.startTime.formatTime()} – ${task.endTime.formatTime()}")
             .setOngoing(true)
             // We do not want notifications to flash when updated, or to continuously hog the status bar of the device,you must:
             .setOnlyAlertOnce(true)
@@ -204,7 +205,6 @@ class TaskExecutionService : Service() {
             action = ACTION_BREAK_TASK
             putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
         }
-
         return PendingIntent.getService(
             this,
             taskId.toInt(),

@@ -55,6 +55,16 @@
             android:theme="@style/Theme.LockIn"
             />
 
+        <activity
+            android:name=".presentation.task_distracted_reflection.TaskReflectionActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            tools:targetApi="27"
+            android:theme="@style/Theme.LockIn"
+            />
+
         <receiver
             android:name=".system.receiver.TaskStartReceiver"
             android:enabled="true"

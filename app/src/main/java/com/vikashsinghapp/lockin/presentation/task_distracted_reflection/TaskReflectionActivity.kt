@@ -1,4 +1,4 @@
-package com.vikashsinghapp.lockin.presentation.task_status
+package com.vikashsinghapp.lockin.presentation.task_distracted_reflection
 
 import android.app.NotificationManager
 import android.content.Intent
@@ -11,7 +11,6 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import com.vikashsinghapp.lockin.MainActivity
 import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
-import com.vikashsinghapp.lockin.system.alarm.AlarmPlayer
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import com.vikashsinghapp.lockin.system.service.TaskExecutionService
 import com.vikashsinghapp.lockin.system.service.TaskExecutionService.Companion.BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID
@@ -20,9 +19,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class TaskStatusActivity : ComponentActivity() {
+class TaskReflectionActivity : ComponentActivity() {
 
-    @Inject lateinit var alarmPlayer: AlarmPlayer
     @Inject lateinit var userPrefs: PlanPrefsRepository
 
     private var submitted = false
@@ -40,15 +38,13 @@ class TaskStatusActivity : ComponentActivity() {
         }
 
         setContent {
-            TaskStatusMarkScreen(
+            TaskDistractedReflectionScreen(
                 taskId = intent.getLongExtra(
                     TaskAlarmScheduler.EXTRA_TASK_ID,
                     -1L
                 ),
-                onNavigateBack = {
+                onBlockEnd = {
                     submitted = true
-                    alarmPlayer.stop()
-
                     lifecycleScope.launch {
                         userPrefs.clearPendingTask()
                     }
@@ -57,15 +53,19 @@ class TaskStatusActivity : ComponentActivity() {
 
                     manager.cancel(BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID)
                     goToMain()
+                },
+                onBlockResume = {
+                    submitted = false
+
+                    // We are clearing Pending Task here also bcs User resume the task
+                    // so no need to mark status, bcs it will only happen when user finish the task
+                    lifecycleScope.launch {
+                        userPrefs.clearPendingTask()
+                    }
+                    goToMain()
                 }
             )
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // 🔇 Pause alarm while user is marking status
-        alarmPlayer.pauseAlarm()
     }
 
     override fun onPause() {
@@ -82,9 +82,6 @@ class TaskStatusActivity : ComponentActivity() {
                 putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
             }
             stopService(serviceIntent)
-        } else {
-            // 🔊 Resume alarm ONLY if user escaped without submitting
-            alarmPlayer.resumeAlarm()
         }
     }
 
