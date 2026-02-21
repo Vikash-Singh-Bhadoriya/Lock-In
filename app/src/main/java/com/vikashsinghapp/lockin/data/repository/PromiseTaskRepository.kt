@@ -12,6 +12,9 @@ class PromiseTaskRepository(
     fun getAllPromiseTasks(planDate: LocalDate = LocalDate.now()): Flow<List<PromiseTask>> =
         promiseTaskDao.getTasksForDay(planDate)
 
+    suspend fun getAllTasksOnce(planDate: LocalDate = LocalDate.now()): List<PromiseTask> =
+        promiseTaskDao.getAllTasksOnce(planDate)
+
 //    suspend fun getRunningByStatus(status: PromiseTaskStatus = PromiseTaskStatus.RUNNING): PromiseTask? =
 //        promiseTaskDao.getRunningByStatus(status)
 

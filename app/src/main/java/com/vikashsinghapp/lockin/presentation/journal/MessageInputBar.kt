@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.vikashsinghapp.lockin.ui.theme.AccentBlue
+import com.vikashsinghapp.lockin.ui.theme.Running
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
 
@@ -77,7 +77,7 @@ fun MessageInputBar(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(
-                        if (text.isNotBlank()) AccentBlue else Color(0xFF333333)
+                        if (text.isNotBlank()) Running else Color(0xFF333333)
                     )
             ) {
                 Icon(

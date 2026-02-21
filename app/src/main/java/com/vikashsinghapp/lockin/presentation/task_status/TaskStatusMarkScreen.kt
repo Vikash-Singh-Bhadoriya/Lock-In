@@ -35,9 +35,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
-import com.vikashsinghapp.lockin.ui.theme.StatusOrange
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
+import com.vikashsinghapp.lockin.ui.theme.Unfinished
 
 @Composable
 fun TaskStatusMarkScreen(
@@ -110,6 +111,15 @@ fun TaskStatusMarkScreen(
                 text = viewModel.note,
                 onValueChange = {
                     viewModel.onEvent(TaskStatusEvent.NoteChanged(it))
+                },
+                hint = when (viewModel.selectedStatus) {
+                    TaskEndStatus.BROKEN ->
+                        "What caused you to stop? Distraction, fatigue, urgency, loss of interest?"
+                    TaskEndStatus.UNFINISHED ->
+                        "What went partially right? What limited you?"
+                    TaskEndStatus.COMPLETED ->
+                        "Anything worth noting?"
+                    else -> "Reflect briefly (optional)"
                 }
             )
 
@@ -151,7 +161,7 @@ fun TaskStatusMarkScreen(
 fun StatusSelectionButton(
     status: TaskEndStatus,
     isSelected: Boolean,
-    selectedColor: Color = StatusOrange,
+    selectedColor: Color = Unfinished,
     onSelect: (TaskEndStatus) -> Unit
 ) {
     // Logic: If selected, use Orange. If not, use SurfaceDarkElevated.

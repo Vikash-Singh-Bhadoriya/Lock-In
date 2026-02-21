@@ -17,8 +17,10 @@ hilt = "2.57.2"
 room = "2.8.4"
 timber = "5.0.1"
 androidxHiltNavigationCompose = "1.3.0"
+reorderable = "3.0.0" #using Calvin-LL/Reorderable
 
 [libraries]
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "dataStore" }
 androidx-datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "dataStore" }

@@ -2,7 +2,6 @@ package com.vikashsinghapp.lockin.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.vikashsinghapp.lockin.presentation.task_status.TaskEndStatus
 import java.time.LocalDate
 import java.time.LocalTime
 

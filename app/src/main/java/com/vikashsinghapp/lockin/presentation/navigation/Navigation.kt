@@ -1,5 +1,6 @@
 package com.vikashsinghapp.lockin.presentation.navigation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -15,6 +16,7 @@ fun Navigation(
     // central API that keeps track of the back stack of composables
     modifier: Modifier = Modifier,
     navController: NavHostController,
+    snackbarHostState: SnackbarHostState,
     startDestination: String = Screen.TodayScreen.route,
     shouldShowPermissionRationale: (String) -> Boolean,
 ) {
@@ -38,7 +40,9 @@ fun Navigation(
             route = Screen.TomorrowFocusScreen.route,
         ) { entry ->
             TomorrowFocusScreen(
-                shouldShowPermissionRationale = shouldShowPermissionRationale
+                shouldShowPermissionRationale = shouldShowPermissionRationale,
+                snackbarHostState = snackbarHostState,
+                onNavigateUp = { navController.navigateUp() },
             )
         }
         // composable that represents Screen.TaskScreen.route

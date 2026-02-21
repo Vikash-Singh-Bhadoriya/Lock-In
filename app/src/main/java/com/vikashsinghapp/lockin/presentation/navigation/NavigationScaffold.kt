@@ -9,8 +9,12 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -19,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
@@ -46,6 +51,13 @@ fun NavigationScaffold(
     LaunchedEffect(isDrawerOpen) {
         if (isDrawerOpen) drawerState.open() else drawerState.close()
     }
+    LaunchedEffect(drawerState.isOpen) {
+        if (drawerState.isOpen && !isDrawerOpen) {
+            drawerViewModel.openDrawer()
+        } else if (!drawerState.isOpen && isDrawerOpen) {
+            drawerViewModel.closeDrawer()
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -65,6 +77,7 @@ fun NavigationScaffold(
             )
         }
     ) {
+        val snackbarHostState = remember { SnackbarHostState() }
         Scaffold(
             // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
             modifier = Modifier
@@ -88,12 +101,26 @@ fun NavigationScaffold(
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceDark)
                 )
-            }
+            },
+            snackbarHost = {
+                // reuse default SnackbarHost to have default animation and timing handling
+                SnackbarHost(snackbarHostState) { data ->
+                    // custom snackbar with the custom colors
+                    Snackbar(
+                        actionColor = MaterialTheme.colorScheme.onBackground,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        snackbarData = data,
+                        dismissActionContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            },
         ) { innerPadding ->
             Navigation(
                 modifier = Modifier.padding(innerPadding),
                 navController = navController,
-                shouldShowPermissionRationale = shouldShowPermissionRationale
+                shouldShowPermissionRationale = shouldShowPermissionRationale,
+                snackbarHostState = snackbarHostState
             )
         }
     }

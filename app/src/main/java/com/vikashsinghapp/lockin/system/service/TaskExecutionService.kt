@@ -74,6 +74,32 @@ class TaskExecutionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
+        when (intent?.action) {
+            ACTION_BREAK_TASK -> {
+                val taskId = intent.getLongExtra(
+                    TaskAlarmScheduler.EXTRA_TASK_ID,
+                    -1L
+                )
+                serviceScope.launch {
+                    countdownJob?.cancel()
+
+                    // Persist reality
+                    userPrefs.setPendingTask(taskId)
+
+                    alarmPlayer.start()
+                    vibrateFor2Seconds()
+                }
+                startActivity(
+                    Intent(this, TaskStatusActivity::class.java).apply {
+                        setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
+                    }
+                )
+                return START_NOT_STICKY
+            }
+        }
+
+
         // 1. Start foreground IMMEDIATELY with a placeholder notification
         startForeground(START_NOTIFICATION_ID, buildPlaceholderNotification().build())
 
@@ -151,6 +177,7 @@ class TaskExecutionService : Service() {
     companion object {
         const val START_NOTIFICATION_ID = 1999
         const val BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID = 2000
+        const val ACTION_BREAK_TASK = "ACTION_BREAK_TASK"
 
     }
 
@@ -172,6 +199,19 @@ class TaskExecutionService : Service() {
         )
     }
 
+    private fun breakTaskPendingIntent(taskId: Long): PendingIntent {
+        val intent = Intent(this, TaskExecutionService::class.java).apply {
+            action = ACTION_BREAK_TASK
+            putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
+        }
+
+        return PendingIntent.getService(
+            this,
+            taskId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
 
     // Later use CountdownTimer, so do not manually need delay(1000)
     private fun startCountdown(task: PromiseTask) {
@@ -332,6 +372,12 @@ class TaskExecutionService : Service() {
             .setContentTitle("${task.title} ${remainingMillis.formatTimeLeft()}")
             .setContentText(contentText)
             .setProgress(100, (progress * 100).roundToInt(), false)
+            .addAction(
+                R.drawable.ic_notification_stop,
+                "Break",
+                breakTaskPendingIntent(task.id)
+            )
+
             // Remove Previous Start & Stop Actions
 //            .clearActions()
 //            .addAction(
@@ -340,6 +386,7 @@ class TaskExecutionService : Service() {
 //                stopPendingIntent(context)
 //            )
             .build()
+
     }
 
 

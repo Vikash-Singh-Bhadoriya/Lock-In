@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -54,6 +56,9 @@ dependencies {
 
     // Coroutines -> Concurrency
     implementation(libs.kotlinx.coroutines.android)
+
+    // Reorder plan's task
+    implementation(libs.reorderable)
 
     // Room -> Local DB
     implementation(libs.room.runtime)

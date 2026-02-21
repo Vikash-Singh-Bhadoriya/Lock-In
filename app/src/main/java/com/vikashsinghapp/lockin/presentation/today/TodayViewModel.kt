@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -38,7 +39,7 @@ class TodayViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             promiseRepository.getAllPromiseTasks(LocalDate.now())
-                .collect { todayTasks ->
+                .collectLatest { todayTasks ->
                     _uiState.value = _uiState.value.copy(
 //                        currentTime = System.currentTimeMillis().toTimeString(),
                         tasks = todayTasks.sortedBy { it.startTime }

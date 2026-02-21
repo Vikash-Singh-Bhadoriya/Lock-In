@@ -36,10 +36,10 @@ fun PermissionDialog(
                 Text(
                     text = if (isPermanentlyDeclined) {
                         "It seems you permanently declined notification permission.\n\n" +
-                                "Cannot start workout if permission is not granted. Go to app settings, then permissions, and then click 'Allow notifications' to grant it."
+                                "Cannot save Plan if permission is not granted. Go to app settings, then permissions, and then click 'Allow notifications' to grant it."
                     } else {
                         "In order to get notifications, allow notification permission.\n\n" +
-                                "We will only use this permission for showing workout running and complete screen notifications."
+                                "We will only use this permission for showing task progress and marking task status notifications."
                     },
                     style = MaterialTheme.typography.bodyLarge
                 )

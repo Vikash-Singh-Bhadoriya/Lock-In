@@ -7,6 +7,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
+import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,8 +41,8 @@ class TaskStatusMarkViewModel @Inject constructor(
         viewModelScope.launch {
             task = repository.getTaskById(taskId)
                 ?: error("Task not found")
-
             title = task.title
+            selectedStatus = task.status
         }
     }
 

@@ -32,4 +32,7 @@ interface PromiseDao {
 //    A “Plan” is just a collection of tasks with the same planDate.
     @Query("SELECT * FROM promise_task WHERE planDate = :planDate")
     fun getTasksForDay(planDate: LocalDate): Flow<List<PromiseTask>>
+
+    @Query("SELECT * FROM promise_task WHERE planDate = :planDate")
+    fun getAllTasksOnce(planDate: LocalDate): List<PromiseTask>
 }

@@ -1,13 +1,12 @@
 package com.vikashsinghapp.lockin.presentation.today
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -28,14 +27,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
+import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.formatTime
+import com.vikashsinghapp.lockin.ui.theme.Broken
+import com.vikashsinghapp.lockin.ui.theme.Completed
+import com.vikashsinghapp.lockin.ui.theme.NotStarted
+import com.vikashsinghapp.lockin.ui.theme.Running
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
-import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
+import com.vikashsinghapp.lockin.ui.theme.Unfinished
 import java.time.LocalTime
 
 @Composable
@@ -56,7 +61,7 @@ fun TodayScreen(
 //        Spacer(Modifier.height(8.dp))
 //        Text(
 //            uiState.currentTime,
-//            color = Color(0xFFB0B0B0),
+//            color = White,
 //            style = MaterialTheme.typography.bodyMedium
 //        )
 //        Spacer(Modifier.height(16.dp))
@@ -99,6 +104,20 @@ fun TodayTaskItem(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.height(IntrinsicSize.Min) // Ensures children match tallest child
     ) {
+
+        val taskColor = when (task.status) {
+            TaskEndStatus.COMPLETED -> Completed
+            TaskEndStatus.UNFINISHED -> Unfinished
+            TaskEndStatus.BROKEN -> Broken
+            TaskEndStatus.NONE -> {
+                // Task RUNNING
+                if (task.isCurrent(now)) {
+                    Running
+                } else {
+                    NotStarted
+                }
+            }
+        }
         // Timeline column with drawBehind for line
         Box(
             Modifier
@@ -133,12 +152,13 @@ fun TodayTaskItem(
                 },
             contentAlignment = Alignment.Center
         ) {
+
             Box(
                 Modifier
                     .size(12.dp)
                     .clip(CircleShape)
                     .background(
-                        if (task.isCurrent(now)) Color(0xFF2D5BFF) else Color(0xFF888888)
+                        taskColor
                     )
             )
         }
@@ -150,30 +170,34 @@ fun TodayTaskItem(
                 .padding(vertical = 12.dp)
                 .clip(MaterialTheme.shapes.medium)
                 .background(
-                    when {
-                        task.isCurrent(now) -> Color(0xFF101C2C)
-                        else -> SurfaceDarkElevated
-                    }
+                    taskColor
                 )
-                .border(
-                    width = if (task.isCurrent(now)) 1.dp else 0.dp,
-                    color = if (task.isCurrent(now)) Color(0xFF2D5BFF) else Color.Transparent,
-                    shape = MaterialTheme.shapes.medium
-                )
-                .padding(16.dp)
+//                .border(
+//                    width = if (task.isCurrent(now)) 1.dp else 0.dp,
+//                    color = if (task.isCurrent(now)) Color(0xFF2D5BFF) else Color.Transparent,
+//                    shape = MaterialTheme.shapes.medium
+//                )
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = task.title,
-                color = if (task.isPast(now)) Color(0xFFAAAAAA) else Color.White,
+                color = White,
                 fontWeight = if (task.isCurrent(now)) FontWeight.Bold else FontWeight.Normal,
                 textDecoration = if (task.isPast(now)) TextDecoration.LineThrough else TextDecoration.None
             )
-            Spacer(Modifier.height(4.dp))
             Text(
                 text = "${task.startTime.formatTime()} – ${task.endTime.formatTime()}",
-                color = Color(0xFFB0B0B0),
+                color = White,
                 style = MaterialTheme.typography.bodySmall
             )
+            task.note?.let {
+                Text(
+                    text = it,
+                    color = White,
+                    style = MaterialTheme.typography.bodySmall
+                )   
+            }
         }
     }
 }

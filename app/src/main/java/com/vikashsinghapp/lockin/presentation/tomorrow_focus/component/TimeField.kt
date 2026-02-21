@@ -44,6 +44,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.vikashsinghapp.lockin.R
 import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
+import com.vikashsinghapp.lockin.ui.theme.mediaQuery
 import java.time.LocalTime
 
 
@@ -53,7 +54,7 @@ fun TimeField(
     modifier: Modifier = Modifier,
     time: LocalTime,
     onTimeChange: (LocalTime) -> Unit,
-    isLocked: Boolean,
+    enable: Boolean,
 ) {
     var isDialogVisible by rememberSaveable { mutableStateOf(false) }
     // Dialog should not be used inside Scaffold, Column => apply paddding etc => size change
@@ -71,22 +72,24 @@ fun TimeField(
             .clip(RoundedCornerShape(16.dp))
             .background(BackgroundDark)
             .padding(8.dp)
-            .clickable {
-                isDialogVisible = true
-            },
+            .mediaQuery(
+                enable, Modifier.clickable {
+                    isDialogVisible = true
+                }
+            ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = time.formatTime(),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            color = if(isLocked) Color.Gray else Color.White,
+            color = if (!enable) Color.Gray else Color.White,
         )
         Icon(
             modifier = Modifier.size(16.dp),
             painter = painterResource(R.drawable.ic_schedule),
             contentDescription = null,
-            tint = if(isLocked) Color.Gray else Color.White,
+            tint = if (!enable) Color.Gray else Color.White,
         )
     }
 }
