@@ -73,6 +73,19 @@ class TomorrowFocusViewModel @Inject constructor(
         permission: String,
         isGranted: Boolean,
     ) {
+        if (!isGranted && !visiblePermissionDialogQueue.contains(permission)) {
+            // Explain to the user that the feature is unavailable because the
+            // features requires a permission that the user has denied. At the
+            // same time, respect the user's decision. Don't link to system
+            // settings in an effort to convince the user to change their decision.
+            visiblePermissionDialogQueue.add(permission)
+        }
+    }
+
+    fun onDisplayOverOtherAppsPermissionPermissionResult(
+        permission: String,
+        isGranted: Boolean,
+    ) {
         if (isGranted) {
             // Permission is granted. Continue the action or workflow in your app.
             Timber.tag(Constants.TAG).d("Permission  Granted")
@@ -180,7 +193,9 @@ class TomorrowFocusViewModel @Inject constructor(
             return
         }
 
-        _eventFlow.emit(TomorrowFocusScreenViewModelUiEvent.RequestNotificationPermission)
+        // Request post notifications permission
+        // Request draw over other apps
+        _eventFlow.emit(TomorrowFocusScreenViewModelUiEvent.RequestPermissions)
     }
 
     suspend fun savePlanAfterPermission() {

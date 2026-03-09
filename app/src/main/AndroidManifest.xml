@@ -8,7 +8,7 @@
     <!--  For Display over other apps  -->
 <!--    "Display over other apps" lets your app show overlays (like chat heads or floating windows).
         "Full-screen notifications" is required for your app to show full-screen intents (like alarms or incoming calls). -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+<!--    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />-->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <uses-permission android:name="android.permission.VIBRATE" />

@@ -8,7 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.vikashsinghapp.lockin.presentation.journal.JournalScreen
 import com.vikashsinghapp.lockin.presentation.settings.SettingsScreen
-import com.vikashsinghapp.lockin.presentation.today.TodayScreen
+import com.vikashsinghapp.lockin.presentation.today.TaskScreen
 import com.vikashsinghapp.lockin.presentation.tomorrow_focus.TomorrowFocusScreen
 
 @Composable
@@ -17,7 +17,7 @@ fun Navigation(
     modifier: Modifier = Modifier,
     navController: NavHostController,
     snackbarHostState: SnackbarHostState,
-    startDestination: String = Screen.TodayScreen.route,
+    startDestination: String = Screen.TaskScreen.route,
     shouldShowPermissionRationale: (String) -> Boolean,
 ) {
     // navController must be link to a NavHost
@@ -47,9 +47,9 @@ fun Navigation(
         }
         // composable that represents Screen.TaskScreen.route
         composable(
-            route = Screen.TodayScreen.route,
+            route = Screen.TaskScreen.route,
         ) { entry ->
-            TodayScreen()
+            TaskScreen()
         }
     }
 }

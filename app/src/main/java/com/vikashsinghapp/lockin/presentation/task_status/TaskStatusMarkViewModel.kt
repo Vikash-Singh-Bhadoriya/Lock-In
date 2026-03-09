@@ -9,9 +9,12 @@ import androidx.lifecycle.viewModelScope
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
+import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,21 +50,27 @@ class TaskStatusMarkViewModel @Inject constructor(
     }
 
 
-
     fun onEvent(event: TaskStatusEvent) {
         viewModelScope.launch {
             when (event) {
                 is TaskStatusEvent.TaskStatusChanged -> {
                     selectedStatus = event.status
                 }
+
                 is TaskStatusEvent.NoteChanged -> {
-                note = event.note
-            }
+                    note = event.note
+                }
+
                 TaskStatusEvent.TaskSubmit -> {
+                    val noteMsg = task.note?.let {
+                        "${task.note}\n${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+                    } ?: "${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+
                     task = task.copy(
                         status = selectedStatus,
-                        note = note
+                        note = noteMsg
                     )
+                    Timber.d("TaskStatusMarkViewModel TaskStatusEvent.TaskSubmit note: ${task.note}")
                     repository.updateTask(task)
                 }
             }

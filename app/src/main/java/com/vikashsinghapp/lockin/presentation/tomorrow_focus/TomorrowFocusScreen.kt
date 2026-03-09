@@ -1,8 +1,10 @@
 package com.vikashsinghapp.lockin.presentation.tomorrow_focus
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,7 +41,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,6 +64,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.vikashsinghapp.lockin.presentation.tomorrow_focus.component.PermissionDialog
 import com.vikashsinghapp.lockin.presentation.tomorrow_focus.component.TimeField
@@ -105,6 +107,17 @@ fun TomorrowFocusScreen(
             }
         )
     }
+    val isDisplayOverOtherAppsGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.USE_FULL_SCREEN_INTENT
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        )
+    }
 
     // Post Notifications Permission
     val requestPostNotificationsPermissionLauncher =
@@ -114,6 +127,18 @@ fun TomorrowFocusScreen(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     viewModel.onPostNotificationsPermissionPermissionResult(
                         permission = Manifest.permission.POST_NOTIFICATIONS, isGranted = isGranted
+                    )
+                }
+            })
+
+    // Post Notifications Permission
+    val requestDisplayOverOtherAppsPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { isGranted ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    viewModel.onDisplayOverOtherAppsPermissionPermissionResult(
+                        permission = Manifest.permission.USE_FULL_SCREEN_INTENT, isGranted = isGranted
                     )
                 }
             })
@@ -244,7 +269,7 @@ fun TomorrowFocusScreen(
                 text = "🔒 Plan locked",
                 color = Color.White
             )
-        } else if (viewModel.isReordering){
+        } else if (viewModel.isReordering) {
             Button(
                 modifier = Modifier.fillMaxWidth(0.5f),
                 onClick = {
@@ -255,15 +280,20 @@ fun TomorrowFocusScreen(
             }
         } else {
 
-            TextButton(
+            Button(
+                modifier = Modifier.fillMaxWidth(0.65f),
                 onClick = {
                     viewModel.onEvent(TomorrowFocusEvent.AddNewTask)
                 }
             ) {
-                Text("Add Task")
+                Text(
+                    text = "Add Task",
+                    color = White,
+                )
             }
 
-            TextButton(
+            Button(
+                modifier = Modifier.fillMaxWidth(0.65f),
                 onClick = {
 //                    // I checked here only if PostNotifications Permission is given if user is on Tiramusu
 //                    // So, I don't need to check later in IntervalTimerService
@@ -279,7 +309,10 @@ fun TomorrowFocusScreen(
 
                 }
             ) {
-                Text("Save Plan")
+                Text(
+                    text = "Save Plan",
+                    color = White,
+                )
             }
         }
     }
@@ -325,10 +358,15 @@ fun TomorrowFocusScreen(
                     snackbarHostState.showSnackbar(uiEvent.message)
                 }
 
-                is TomorrowFocusScreenViewModelUiEvent.RequestNotificationPermission -> {
+                is TomorrowFocusScreenViewModelUiEvent.RequestPermissions -> {
                     // I checked here only if PostNotifications Permission is given if user is on Tiramusu
                     // So, I don't need to check later in IntervalTimerService
                     if (isPostNotificationsPermissionGranted) {
+                        val intent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            "package:${context.packageName}".toUri()
+                        )
+//                        context.startActivity(intent, REQUEST_CODE_DRAW_OVER_APPS)
                         viewModel.onEvent(TomorrowFocusEvent.SavePlanAfterPermissionGranted)
                     } else if (Build.VERSION.SDK_INT >= 33) {
                         // this will be called here only, as we should request for permission when we need (to start timer)
@@ -336,6 +374,7 @@ fun TomorrowFocusScreen(
                             Manifest.permission.POST_NOTIFICATIONS
                         )
                     }
+
                 }
 
                 TomorrowFocusScreenViewModelUiEvent.ScrollToTop -> {
@@ -347,7 +386,6 @@ fun TomorrowFocusScreen(
         }
     }
 }
-//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -381,7 +419,6 @@ fun TaskBlock(
         val keyboardController = LocalSoftwareKeyboardController.current
         val focusManager = LocalFocusManager.current
 
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -395,7 +432,7 @@ fun TaskBlock(
                         .fillMaxWidth()
                         .padding(top = 16.dp),
                     text = "🔒 $title",
-                    color = Color.White
+                    color = White
                 )
             } else {
                 if (isReordering) {
@@ -404,7 +441,7 @@ fun TaskBlock(
                             .weight(1f)
                             .padding(top = 16.dp),
                         text = title,
-                        color = Color.White
+                        color = White
                     )
 
                     Icon(
@@ -487,6 +524,7 @@ fun EditDeleteDuplicateMoreOptionsDropDownMenu(
     onDuplicate: () -> Unit,
 ) {
     Row(
+        modifier = modifier,
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {

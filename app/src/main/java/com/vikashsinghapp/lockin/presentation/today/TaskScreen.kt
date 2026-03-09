@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,12 +45,13 @@ import com.vikashsinghapp.lockin.ui.theme.Unfinished
 import java.time.LocalTime
 
 @Composable
-fun TodayScreen(
+fun TaskScreen(
     modifier: Modifier = Modifier,
-    viewModel: TodayViewModel = hiltViewModel(),
+    viewModel: TaskViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentTime by viewModel.currentTime.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
 
     Column(
         modifier = modifier
@@ -58,30 +60,37 @@ fun TodayScreen(
             .padding(end = 16.dp)
             .padding(start = 8.dp)
     ) {
-//        Spacer(Modifier.height(8.dp))
-//        Text(
-//            uiState.currentTime,
-//            color = White,
-//            style = MaterialTheme.typography.bodyMedium
-//        )
-//        Spacer(Modifier.height(16.dp))
-
         TodayTimeline(
             tasks = uiState.tasks,
             modifier = Modifier.fillMaxSize(),
-            now = currentTime
+            now = currentTime,
+            dateCalendar = {
+                DateCalendar(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    isCalendarVisible = uiState.isDateCalendarVisible,
+                    onShowCalendar = { viewModel.onEvent(TaskScreenEvent.ShowDateCalendar) },
+                    onHideCalendar = { viewModel.onEvent(TaskScreenEvent.HideDateCalendar) },
+                    selectedDate = selectedDate,
+                    onSelectedDateChange = {
+                        viewModel.onEvent(TaskScreenEvent.OnDateSelected(it))
+                    }
+                )
+            }
         )
     }
 }
 
 @Composable
-fun TodayTimeline(tasks: List<PromiseTask>, now: LocalTime, modifier: Modifier = Modifier) {
+fun TodayTimeline(tasks: List<PromiseTask>, dateCalendar: @Composable () -> Unit, now: LocalTime, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(bottom = 16.dp),
         // cannot break the timeline line
 //        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        item {
+            dateCalendar()
+        }
         itemsIndexed(tasks) { idx, task ->
             TodayTaskItem(
                 task = task,

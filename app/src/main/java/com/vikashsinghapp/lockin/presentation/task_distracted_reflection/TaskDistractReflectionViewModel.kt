@@ -10,9 +10,12 @@ import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import com.vikashsinghapp.lockin.data.entity.TaskDistractedOptions
 import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
+import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -58,17 +61,30 @@ class TaskDistractReflectionViewModel @Inject constructor(
                     note = event.note
                 }
                 TaskDistractReflectionEvent.EndThisBlock -> {
+                    val noteMsg = task.note?.let {
+                        "${task.note}\n${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+                    } ?: "${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+
+
+
                     task = task.copy(
                         status = TaskEndStatus.BROKEN,
-                        note = "${selectedStatus.label}: $note"
+                        note = noteMsg
                     )
+                    Timber.d("TaskDistractReflectionViewModel TaskDistractReflectionEvent.EndThisBlock note: ${task.note}")
                     repository.updateTask(task)
                 }
                 TaskDistractReflectionEvent.ResumeThisBlock -> {
+
+                    val noteMsg = task.note?.let {
+                        "${task.note}\n${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+                    } ?: "${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+
                     task = task.copy(
                         status = TaskEndStatus.NONE,
-                        note = "${selectedStatus.label}: $note"
+                        note = noteMsg
                     )
+                    Timber.d("TaskDistractReflectionViewModel TaskDistractReflectionEvent.ResumeThisBlock note: ${task.note}")
                     repository.updateTask(task)
                 }
             }
