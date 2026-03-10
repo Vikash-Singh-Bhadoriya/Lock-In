@@ -1,12 +1,18 @@
 package com.vikashsinghapp.lockin.presentation.journal
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -17,7 +23,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +35,8 @@ fun JournalScreen(
     viewModel: JournalViewModel = hiltViewModel(),
 ) {
     val messages by viewModel.messages.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+    val activeCategory by viewModel.selectedCategory.collectAsState()
     var inputText by rememberSaveable { mutableStateOf("") }
 
 //    Scaffold(
@@ -48,6 +58,16 @@ fun JournalScreen(
                 }
             }
 
+            // 1. Category Filter Strip
+            LazyRow(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(categories) { cat ->
+                    FilterChip(
+                        selected = cat == activeCategory,
+                        onClick = { viewModel.setCategory(cat) },
+                        label = { Text(cat, color = White) }
+                    )
+                }
+            }
 /*
             When the keyboard opens:
             The semantic intent (“user was at bottom”) is lost

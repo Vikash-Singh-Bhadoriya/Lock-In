@@ -135,6 +135,7 @@ class TomorrowFocusViewModel @Inject constructor(
                 val promiseTask = PromiseTask(
                     id = newId,
                     title = "New Task",
+                    category = "Uncategorized"
                 )
                 localTasks.add(promiseTask)
             }

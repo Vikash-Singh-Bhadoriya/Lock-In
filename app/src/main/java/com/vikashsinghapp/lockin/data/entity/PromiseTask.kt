@@ -12,6 +12,7 @@ data class PromiseTask(
     val id: Long = 0L,
     val planDate: LocalDate = LocalDate.now(),
     val title: String,
+    val category: String, // Grouping: "DSA", "Android Dev", "Workout", across multiple days
     val startTime: LocalTime = LocalTime.now(),
     val endTime: LocalTime = LocalTime.now().plusMinutes(15),
     val status: TaskEndStatus = TaskEndStatus.NONE,

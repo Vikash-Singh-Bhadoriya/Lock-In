@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
+import com.vikashsinghapp.lockin.presentation.journal.JournalMessageWithTask
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -16,6 +17,14 @@ interface JournalMessageDao {
 
     @Query("SELECT * FROM journal_messages WHERE duringPromiseTaskId = :taskId ORDER BY timestamp")
     fun getForTask(taskId: Long): Flow<List<JournalMessage>>
+
+    @Query("""
+        SELECT j.*, t.title as taskTitle, t.category as taskCategory 
+        FROM journal_messages j 
+        LEFT JOIN promise_task t ON j.duringPromiseTaskId = t.id 
+        ORDER BY j.timestamp DESC
+    """)
+    fun getAllWithTaskInfo(): Flow<List<JournalMessageWithTask>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(message: JournalMessage): Long

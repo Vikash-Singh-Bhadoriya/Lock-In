@@ -14,7 +14,8 @@ import com.vikashsinghapp.lockin.data.type_converter.LocalTimeConverter
 
 @Database(
     entities = [PromiseTask::class, JournalMessage::class, DayReflection::class],
-    version = 1
+    version = 2,
+    exportSchema = true
 )
 @TypeConverters( LocalTimeConverter::class, LocalDateConverter::class)
 abstract class LockInDatabase : RoomDatabase() {

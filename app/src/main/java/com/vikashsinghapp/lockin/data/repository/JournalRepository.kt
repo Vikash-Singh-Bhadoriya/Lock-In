@@ -2,6 +2,7 @@ package com.vikashsinghapp.lockin.data.repository
 
 import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
+import com.vikashsinghapp.lockin.presentation.journal.JournalMessageWithTask
 import kotlinx.coroutines.flow.Flow
 
 class JournalRepository(
@@ -13,6 +14,8 @@ class JournalRepository(
 
     fun getMessagesForTask(taskId: Long): Flow<List<JournalMessage>> =
         journalDao.getForTask(taskId)
+
+    fun getCombinedMessages(): Flow<List<JournalMessageWithTask>> = journalDao.getAllWithTaskInfo()
 
     suspend fun addMessage(
         content: String,
