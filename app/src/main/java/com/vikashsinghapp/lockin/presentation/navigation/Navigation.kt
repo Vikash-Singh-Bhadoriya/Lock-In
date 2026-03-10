@@ -4,10 +4,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.vikashsinghapp.lockin.presentation.journal.JournalScreen
 import com.vikashsinghapp.lockin.presentation.settings.SettingsScreen
+import com.vikashsinghapp.lockin.presentation.task_detail.TaskDetailScreen
 import com.vikashsinghapp.lockin.presentation.today.TaskScreen
 import com.vikashsinghapp.lockin.presentation.tomorrow_focus.TomorrowFocusScreen
 
@@ -49,7 +52,20 @@ fun Navigation(
         composable(
             route = Screen.TaskScreen.route,
         ) { entry ->
-            TaskScreen()
+            TaskScreen(onNavigateToTaskDetail = { taskId ->
+                navController.navigate(Screen.TaskDetailScreen.route + "/$taskId")
+            })
+        }
+        composable(
+            route = Screen.TaskDetailScreen.route + "/{taskId}", // Append the argument to the route
+            arguments = listOf(
+                navArgument("taskId") { type = NavType.LongType }
+            )
+        ) { entry ->
+            // The ViewModel will automatically find "taskId" in SavedStateHandle via Hilt
+            TaskDetailScreen(onBack = {
+                navController.navigateUp()
+            })
         }
     }
 }

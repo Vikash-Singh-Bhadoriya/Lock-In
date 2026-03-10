@@ -13,6 +13,7 @@ import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalTime
@@ -43,12 +44,12 @@ class TaskDistractReflectionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            task = repository.getTaskById(taskId)
-                ?: error("Task not found")
-            title = task.title
+            repository.getTaskById(taskId).collectLatest { task ->
+                title = task?.title
+                    ?: error("Task not found")
+            }
         }
     }
-
 
 
     fun onEvent(event: TaskDistractReflectionEvent) {
@@ -57,12 +58,16 @@ class TaskDistractReflectionViewModel @Inject constructor(
                 is TaskDistractReflectionEvent.TaskStatusChanged -> {
                     selectedStatus = event.status
                 }
+
                 is TaskDistractReflectionEvent.NoteChanged -> {
                     note = event.note
                 }
+
                 TaskDistractReflectionEvent.EndThisBlock -> {
                     val noteMsg = task.note?.let {
-                        "${task.note}\n${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+                        "${task.note}\n${
+                            LocalTime.now().formatTime()
+                        } ${selectedStatus.label}: $note"
                     } ?: "${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
 
 
@@ -74,10 +79,13 @@ class TaskDistractReflectionViewModel @Inject constructor(
                     Timber.d("TaskDistractReflectionViewModel TaskDistractReflectionEvent.EndThisBlock note: ${task.note}")
                     repository.updateTask(task)
                 }
+
                 TaskDistractReflectionEvent.ResumeThisBlock -> {
 
                     val noteMsg = task.note?.let {
-                        "${task.note}\n${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+                        "${task.note}\n${
+                            LocalTime.now().formatTime()
+                        } ${selectedStatus.label}: $note"
                     } ?: "${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
 
                     task = task.copy(

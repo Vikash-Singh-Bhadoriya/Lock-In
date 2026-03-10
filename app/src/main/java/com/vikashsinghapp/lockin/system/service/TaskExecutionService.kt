@@ -115,7 +115,7 @@ class TaskExecutionService : Service() {
             return START_NOT_STICKY
         }
         countdownJob = serviceScope.launch {
-            val task = repository.getTaskById(taskId)
+            val task = repository.getTaskByIdOnce(taskId)
             Timber.tag(TAG)
                 .d("TaskExecutionService onStartCommand Task : $task inside CoroutineScope ")
             task?.let {

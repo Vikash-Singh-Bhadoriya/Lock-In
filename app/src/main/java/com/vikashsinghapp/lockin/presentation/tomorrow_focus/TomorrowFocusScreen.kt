@@ -284,7 +284,7 @@ fun TomorrowFocusScreen(
                 modifier = Modifier.fillMaxWidth(0.65f),
                 onClick = {
                     viewModel.onEvent(TomorrowFocusEvent.AddNewTask)
-                }
+                },
             ) {
                 Text(
                     text = "Add Task",

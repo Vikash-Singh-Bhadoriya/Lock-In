@@ -16,6 +16,7 @@ class JournalRepository(
 
     suspend fun addMessage(
         content: String,
+        duringPromiseTaskId: Long? = null
 //        executionState: ExecutionState
     ) {
 //        val duringPromiseTaskId = when (executionState) {
@@ -27,7 +28,7 @@ class JournalRepository(
                 content = content,
                 timestamp = System.currentTimeMillis(),
 //                duringPromiseTaskId = duringPromiseTaskId
-                duringPromiseTaskId = null
+                duringPromiseTaskId = duringPromiseTaskId
             )
         )
     }

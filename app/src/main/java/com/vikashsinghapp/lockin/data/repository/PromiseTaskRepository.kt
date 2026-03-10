@@ -18,8 +18,11 @@ class PromiseTaskRepository(
 //    suspend fun getRunningByStatus(status: PromiseTaskStatus = PromiseTaskStatus.RUNNING): PromiseTask? =
 //        promiseTaskDao.getRunningByStatus(status)
 
-    suspend fun getTaskById(id: Long): PromiseTask? =
+    fun getTaskById(id: Long): Flow<PromiseTask?> =
         promiseTaskDao.getTaskById(id)
+
+    suspend fun getTaskByIdOnce(id: Long): PromiseTask? =
+        promiseTaskDao.getTaskByIdOnce(id)
 
     suspend fun addTask(task: PromiseTask) {
         promiseTaskDao.insert(task)

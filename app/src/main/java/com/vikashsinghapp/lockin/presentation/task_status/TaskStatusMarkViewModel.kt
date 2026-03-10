@@ -12,6 +12,7 @@ import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalTime
@@ -42,10 +43,11 @@ class TaskStatusMarkViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            task = repository.getTaskById(taskId)
-                ?: error("Task not found")
-            title = task.title
-            selectedStatus = task.status
+            repository.getTaskById(taskId).collectLatest { task ->
+                title = task?.title
+                    ?: error("Task not found")
+                selectedStatus = task.status
+            }
         }
     }
 

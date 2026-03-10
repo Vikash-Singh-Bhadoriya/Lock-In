@@ -1,4 +1,4 @@
-package com.vikashsinghapp.lockin.presentation.today
+package com.vikashsinghapp.lockin.presentation.today.component
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -171,7 +172,7 @@ fun DateCalendar(
                         dayInSelectionRangeContentColor = White, // Range day text
                         dayInSelectionRangeContainerColor = Color(0xFF2D5BFF).copy(alpha = 0.15f), // Range day background
                         dividerColor = Color(0xFF444444), // Divider
-                        dateTextFieldColors = androidx.compose.material3.TextFieldDefaults.colors(
+                        dateTextFieldColors = TextFieldDefaults.colors(
                             focusedTextColor = White,
                             unfocusedTextColor = White,
                             disabledTextColor = Color(0xFF888888),
