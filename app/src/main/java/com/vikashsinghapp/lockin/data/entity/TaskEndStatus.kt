@@ -8,8 +8,8 @@ import com.vikashsinghapp.lockin.ui.theme.Unfinished
 
 
 enum class TaskEndStatus(val label: String, val color: Color) {
+    PENDING("Pending", SurfaceDarkElevated), // Not started
     COMPLETED("Completed", Completed), // Planned outcome achieved
     UNFINISHED("Unfinished", Unfinished), // Worked honestly, but goal not fully met,
     BROKEN("Broken", Broken), // Did not work at all, or made little progress
-    NONE("None", SurfaceDarkElevated) // Block not marked yet (not started/running)
 }
