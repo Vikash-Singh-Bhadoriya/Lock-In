@@ -1,6 +1,9 @@
 package com.vikashsinghapp.lockin.presentation.journal
 
+import android.content.ClipData
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,22 +18,35 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vikashsinghapp.lockin.ui.theme.Running
+import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun MessageList(
     modifier: Modifier = Modifier,
     messages: List<JournalMessageWithTask>,
+    onDeleteMessage: (JournalMessageWithTask) -> Unit,
     listState: LazyListState,
 //    bringIntoViewRequester: BringIntoViewRequester
 ) {
@@ -42,33 +58,39 @@ fun MessageList(
         contentPadding = PaddingValues(vertical = 12.dp)
     ) {
         items(messages, key = { it.message.id }) { message ->
-            MessageBubble(message)
+            MessageBubble(message, {
+                onDeleteMessage(message)
+            })
         }
     }
 }
 
 @Composable
-fun MessageBubble(item: JournalMessageWithTask) {
+fun MessageBubble(item: JournalMessageWithTask, onDeleteMessage: () -> Unit) {
+    var showMenu by remember { mutableStateOf(false) }
+    val clipboard = LocalClipboard.current
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
         // Tag Row
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            item.taskCategory?.let {
+        // ONLY SHOW TAG ROW IF IT BELONGS TO A TASK
+        if (item.taskTitle.isNotBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = it.uppercase(),
+                    text = item.taskCategory.uppercase(),
                     color = Running, // Your primary "Running" color
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 4.dp)
                 )
+                Spacer(Modifier.width(8.dp))
             }
-            Spacer(Modifier.width(8.dp))
-            item.taskTitle?.let {
-                Text(text = "• $it", color = Color.Gray, fontSize = 10.sp)
-            }
+            Text(text = "• ${item.taskTitle}", color = Color.Gray, fontSize = 10.sp)
         }
 
         Spacer(Modifier.height(4.dp))
@@ -76,6 +98,10 @@ fun MessageBubble(item: JournalMessageWithTask) {
             modifier = Modifier
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFF1A1A1A))
+                .combinedClickable(
+                    onClick = { /* Do nothing on normal tap */ },
+                    onLongClick = { showMenu = true }
+                )
                 .padding(14.dp)
         ) {
             Text(
@@ -83,6 +109,34 @@ fun MessageBubble(item: JournalMessageWithTask) {
                 color = Color.White,
                 fontSize = 15.sp
             )
+
+            // The Long-Press Menu
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+                containerColor = SurfaceDarkElevated
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Copy", color = Color.White) },
+                    onClick = {
+                        // 2. Launch a coroutine to handle the new suspend function safely
+                        coroutineScope.launch {
+                            val clipData =
+                                ClipData.newPlainText("Journal Log", item.message.content)
+                            clipboard.setClipEntry(ClipEntry(clipData))
+                            Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                            showMenu = false
+                        }
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Delete", color = Color.Red) },
+                    onClick = {
+                        onDeleteMessage()
+                        showMenu = false
+                    }
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(4.dp))

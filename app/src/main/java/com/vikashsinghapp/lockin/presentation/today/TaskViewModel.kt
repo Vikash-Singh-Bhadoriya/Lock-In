@@ -2,15 +2,23 @@ package com.vikashsinghapp.lockin.presentation.today
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vikashsinghapp.lockin.data.entity.CategoryEntity
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
+import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
+import com.vikashsinghapp.lockin.data.repository.CategoryRepository
+import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -27,8 +35,12 @@ data class TodayUiState(
 @HiltViewModel
 class TaskViewModel @Inject constructor(
     private val promiseRepository: PromiseTaskRepository,
-//    prefs: PlanPrefsRepository
+    private val categoryRepository: CategoryRepository,
+    planPrefs: PlanPrefsRepository
 ) : ViewModel() {
+
+    val isLocked = planPrefs.isPlanLocked
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
 
 //    val hasPendingBlock = prefs.pendingTaskId
 //        .map { it != null }
@@ -43,7 +55,14 @@ class TaskViewModel @Inject constructor(
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate = _selectedDate.asStateFlow()
 
+    private val _categories = MutableStateFlow<List<CategoryEntity>>(emptyList())
+    val categories: StateFlow<List<CategoryEntity>> = _categories.asStateFlow()
+
     private var job: Job? = null
+
+    // used for one-time UI Events
+    private val _eventFlow = MutableSharedFlow<TaskScreenViewModelUiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     init {
         // Both run independently and concurrently
@@ -71,6 +90,11 @@ class TaskViewModel @Inject constructor(
                     )
                 }
         }
+        viewModelScope.launch {
+            categoryRepository.getAllCategories().collectLatest {
+                _categories.value = it
+            }
+        }
     }
 
 
@@ -94,18 +118,45 @@ class TaskViewModel @Inject constructor(
                     isDateCalendarVisible = false
                 )
             }
+
             TaskScreenEvent.ShowDateCalendar -> {
 
                 _uiState.value = _uiState.value.copy(
                     isDateCalendarVisible = true
                 )
             }
+
+            is TaskScreenEvent.InjectTask -> {
+                viewModelScope.launch {
+                    val newTask = PromiseTask(
+                        id = 0,
+                        planDate = LocalDate.now(), // Injected tasks always happen today
+                        title = event.title,
+                        category = event.category,
+                        startTime = event.startTime,
+                        endTimePlan = event.endTimePlan,
+                        status = TaskEndStatus.PENDING,
+                    )
+                    promiseRepository.addTask(newTask)
+                    _eventFlow.emit(TaskScreenViewModelUiEvent.SchedulePlanTaskAlarm(newTask))
+                }
+            }
         }
     }
 }
 
+sealed class TaskScreenViewModelUiEvent {
+    data class SchedulePlanTaskAlarm(val task: PromiseTask) : TaskScreenViewModelUiEvent()
+}
+
 sealed class TaskScreenEvent {
     data class OnDateSelected(val date: LocalDate) : TaskScreenEvent()
-    data object ShowDateCalendar: TaskScreenEvent()
-    data object HideDateCalendar: TaskScreenEvent()
+    data class InjectTask(
+        val title: String,
+        val startTime: LocalTime,
+        val endTimePlan: LocalTime,
+        val category: String,
+    ) : TaskScreenEvent()
+    data object ShowDateCalendar : TaskScreenEvent()
+    data object HideDateCalendar : TaskScreenEvent()
 }

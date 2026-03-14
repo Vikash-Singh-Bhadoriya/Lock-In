@@ -14,10 +14,10 @@ data class PromiseTask(
     val title: String,
     val category: String, // Grouping: "DSA", "Android Dev", "Workout", across multiple days
     val startTime: LocalTime = LocalTime.now(),
-    val endTime: LocalTime = LocalTime.now().plusMinutes(15),
-    val status: TaskEndStatus = TaskEndStatus.NONE,
+    val endTimePlan: LocalTime = LocalTime.now().plusMinutes(60),
+    val status: TaskEndStatus = TaskEndStatus.PENDING,
+    val actualEndTime: LocalTime? = null,
 //    val status: PromiseTaskStatus = PromiseTaskStatus.NOT_STARTED,
 
     val note: String? = null, // "Phone", "P*rn", "Fatigue"
-    val actualEndTime: Long? = null
 )

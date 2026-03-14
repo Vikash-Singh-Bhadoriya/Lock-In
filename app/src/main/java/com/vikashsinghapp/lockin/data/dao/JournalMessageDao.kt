@@ -19,10 +19,12 @@ interface JournalMessageDao {
     fun getForTask(taskId: Long): Flow<List<JournalMessage>>
 
     @Query("""
-        SELECT j.*, t.title as taskTitle, t.category as taskCategory 
+        SELECT j.*, 
+               IFNULL(t.title, '') as taskTitle, 
+               IFNULL(t.category, '') as taskCategory 
         FROM journal_messages j 
         LEFT JOIN promise_task t ON j.duringPromiseTaskId = t.id 
-        ORDER BY j.timestamp DESC
+        ORDER BY j.timestamp ASC
     """)
     fun getAllWithTaskInfo(): Flow<List<JournalMessageWithTask>>
 

@@ -29,7 +29,7 @@ interface PromiseDao {
     fun getTaskById(id: Long): Flow<PromiseTask?>
 
     @Query("SELECT * FROM promise_task WHERE id = :id")
-    fun getTaskByIdOnce(id: Long): PromiseTask?
+    suspend fun getTaskByIdOnce(id: Long): PromiseTask?
 
 //    @Query("SELECT * FROM promise_task WHERE startTime >= :dayStart AND startTime < :dayEnd")
 //    A “Plan” is just a collection of tasks with the same planDate.
@@ -37,5 +37,5 @@ interface PromiseDao {
     fun getTasksForDay(planDate: LocalDate): Flow<List<PromiseTask>>
 
     @Query("SELECT * FROM promise_task WHERE planDate = :planDate")
-    fun getAllTasksOnce(planDate: LocalDate): List<PromiseTask>
+    suspend fun getAllTasksOnce(planDate: LocalDate): List<PromiseTask>
 }

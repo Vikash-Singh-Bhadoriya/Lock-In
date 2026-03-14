@@ -4,10 +4,10 @@ import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import java.time.LocalTime
 
 fun PromiseTask.isCurrent(now: LocalTime = LocalTime.now()): Boolean =
-    now >= this.startTime && now < this.endTime
+    now >= this.startTime && now < this.endTimePlan
 
 fun PromiseTask.isPast(now: LocalTime = LocalTime.now()): Boolean =
-    now >= this.endTime
+    now >= this.endTimePlan
 
 fun PromiseTask.isFuture(now: LocalTime = LocalTime.now()): Boolean =
     now < this.startTime

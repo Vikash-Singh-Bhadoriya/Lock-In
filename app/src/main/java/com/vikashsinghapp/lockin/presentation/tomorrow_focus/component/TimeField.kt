@@ -1,6 +1,7 @@
 package com.vikashsinghapp.lockin.presentation.tomorrow_focus.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,7 +49,6 @@ import com.vikashsinghapp.lockin.ui.theme.mediaQuery
 import java.time.LocalTime
 
 
-@ExperimentalMaterial3Api
 @Composable
 fun TimeField(
     modifier: Modifier = Modifier,
@@ -71,13 +71,14 @@ fun TimeField(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(BackgroundDark)
+            .border(1.dp, if (!enable) Color.Gray else Color.White, RoundedCornerShape(16.dp))
             .padding(8.dp)
             .mediaQuery(
                 enable, Modifier.clickable {
                     isDialogVisible = true
                 }
             ),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -85,6 +86,7 @@ fun TimeField(
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
             color = if (!enable) Color.Gray else Color.White,
         )
+        Spacer(Modifier.padding(8.dp))
         Icon(
             modifier = Modifier.size(16.dp),
             painter = painterResource(R.drawable.ic_schedule),

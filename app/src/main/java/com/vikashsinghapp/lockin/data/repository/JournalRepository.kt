@@ -36,7 +36,7 @@ class JournalRepository(
         )
     }
 
-    suspend fun deleteMessage(message: JournalMessage) {
-        journalDao.delete(message)
+    suspend fun deleteMessage(journalMessage: JournalMessage) {
+        journalDao.delete(journalMessage)
     }
 }
