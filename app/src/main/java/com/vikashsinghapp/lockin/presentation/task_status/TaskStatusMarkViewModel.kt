@@ -35,7 +35,7 @@ class TaskStatusMarkViewModel @Inject constructor(
     var title by mutableStateOf("")
         private set
 
-    var selectedStatus by mutableStateOf(TaskEndStatus.NONE)
+    var selectedStatus by mutableStateOf(TaskEndStatus.PENDING)
         private set
 
     var note by mutableStateOf("")
@@ -44,9 +44,11 @@ class TaskStatusMarkViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             repository.getTaskById(taskId).collectLatest { task ->
-                title = task?.title
-                    ?: error("Task not found")
-                selectedStatus = task.status
+                task?.let {
+                    this@TaskStatusMarkViewModel.task = it
+                    title = it.title
+                    selectedStatus = it.status
+                } ?: error("Task not found")
             }
         }
     }

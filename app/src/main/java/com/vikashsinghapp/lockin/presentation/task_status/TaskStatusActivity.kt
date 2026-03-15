@@ -17,6 +17,7 @@ import com.vikashsinghapp.lockin.system.service.TaskExecutionService
 import com.vikashsinghapp.lockin.system.service.TaskExecutionService.Companion.BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -71,6 +72,8 @@ class TaskStatusActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         if (submitted) {
+            Timber.d("STOPPING onPause TASKSTATUS ACTIVITY SERVICE")
+
             // WHEN I submit => I WANT TO stop THE FOREGROUND SERVICE
             val taskId = intent.getLongExtra(
                 TaskAlarmScheduler.EXTRA_TASK_ID,

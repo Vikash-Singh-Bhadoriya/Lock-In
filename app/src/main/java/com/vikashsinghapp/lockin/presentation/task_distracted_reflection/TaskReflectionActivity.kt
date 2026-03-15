@@ -9,6 +9,7 @@ import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
+import com.vikashsinghapp.lockin.Constants.TAG
 import com.vikashsinghapp.lockin.MainActivity
 import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
@@ -16,6 +17,7 @@ import com.vikashsinghapp.lockin.system.service.TaskExecutionService
 import com.vikashsinghapp.lockin.system.service.TaskExecutionService.Companion.BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -29,9 +31,18 @@ class TaskReflectionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        Timber.tag(TAG).d("TaskReflectionActivity Created")
+
+        val taskId = intent.getLongExtra(TaskAlarmScheduler.EXTRA_TASK_ID, -1L)
+        if (taskId != -1L) {
+            lifecycleScope.launch {
+                userPrefs.setPendingTask(taskId) // Persist reality the moment the screen opens
+            }
+        }
+
         setShowWhenLocked(true)
         setTurnScreenOn(true)
-
+2
         // Prevent back press
         onBackPressedDispatcher.addCallback(this) {
               // Do nothing
@@ -71,6 +82,8 @@ class TaskReflectionActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         if (submitted) {
+
+            Timber.d("STOPPING onPause SERVICE")
             // WHEN I submit => I WANT TO stop THE FOREGROUND SERVICE
             val taskId = intent.getLongExtra(
                 TaskAlarmScheduler.EXTRA_TASK_ID,

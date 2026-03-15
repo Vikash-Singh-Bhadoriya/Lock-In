@@ -3,6 +3,7 @@ package com.vikashsinghapp.lockin.di
 import android.content.Context
 import androidx.room.Room
 import com.vikashsinghapp.lockin.data.LockInDatabase
+import com.vikashsinghapp.lockin.data.dao.CategoryDao
 import com.vikashsinghapp.lockin.data.dao.DayReflectionDao
 import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
 import com.vikashsinghapp.lockin.data.dao.PromiseDao
@@ -38,6 +39,11 @@ object DatabaseModule {
     @Singleton
     fun providePromiseDao(db: LockInDatabase): PromiseDao =
         db.promiseDao()
+
+    @Provides
+    @Singleton
+    fun provideCategoryDao(db: LockInDatabase): CategoryDao =
+        db.categoryDao()
 
     @Provides
     @Singleton

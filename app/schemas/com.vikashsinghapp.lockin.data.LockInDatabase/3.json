@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 1,
-    "identityHash": "fcb91c8477b52dedcea340ab3c04604a",
+    "version": 3,
+    "identityHash": "f34cc592a7daaafbe63f3754206954fa",
     "entities": [
       {
         "tableName": "promise_task",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `planDate` TEXT NOT NULL, `title` TEXT NOT NULL, `category` TEXT NOT NULL, `startTime` TEXT NOT NULL, `endTimePlan` TEXT NOT NULL, `status` TEXT NOT NULL, `actualEndTime` TEXT, `note` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `planDate` TEXT NOT NULL, `title` TEXT NOT NULL, `category` TEXT NOT NULL, `startTime` TEXT NOT NULL, `endTime` TEXT NOT NULL, `status` TEXT NOT NULL, `note` TEXT, `actualEndTime` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -39,8 +39,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "endTimePlan",
-            "columnName": "endTimePlan",
+            "fieldPath": "endTime",
+            "columnName": "endTime",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -51,14 +51,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "actualEndTime",
-            "columnName": "actualEndTime",
-            "affinity": "TEXT"
-          },
-          {
             "fieldPath": "note",
             "columnName": "note",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "actualEndTime",
+            "columnName": "actualEndTime",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -189,7 +189,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fcb91c8477b52dedcea340ab3c04604a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f34cc592a7daaafbe63f3754206954fa')"
     ]
   }
 }

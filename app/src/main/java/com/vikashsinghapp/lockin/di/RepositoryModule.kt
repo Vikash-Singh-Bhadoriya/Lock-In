@@ -1,8 +1,10 @@
 package com.vikashsinghapp.lockin.di
 
 import android.content.Context
+import com.vikashsinghapp.lockin.data.dao.CategoryDao
 import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
 import com.vikashsinghapp.lockin.data.dao.PromiseDao
+import com.vikashsinghapp.lockin.data.repository.CategoryRepository
 import com.vikashsinghapp.lockin.data.repository.JournalRepository
 import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
@@ -28,6 +30,12 @@ object RepositoryModule {
     fun provideTaskRepository(
         dao: PromiseDao
     ): PromiseTaskRepository = PromiseTaskRepository(dao)
+
+    @Provides
+    @Singleton
+    fun provideCategoryRepository(
+        dao: CategoryDao
+    ): CategoryRepository = CategoryRepository(dao)
 
     @Provides
     @Singleton

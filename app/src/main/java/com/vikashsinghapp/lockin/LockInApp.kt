@@ -35,6 +35,8 @@ class LockInApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
+//        isActivityVisible = true
+
         // create IntervalTimer Notification Channel for Timer Running & Timer Finished Screen
         createNotificationChannel(this)
 
@@ -81,6 +83,11 @@ class LockInApp : Application() {
 //            })
 //            .build()
     }
+
+//    override fun onTerminate() {
+//        isActivityVisible = false
+//        super.onTerminate()
+//    }
 
     private fun createNotificationChannel(context: Context) {
         // Create the NotificationChannel, but only on API 26+ because

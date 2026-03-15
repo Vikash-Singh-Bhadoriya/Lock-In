@@ -90,7 +90,8 @@ fun TaskStatusMarkScreen(
 
             // --- Status Buttons ---
             // Filter out NONE so we don't show a button for it
-            val statusOptions = TaskEndStatus.entries.filter { it != TaskEndStatus.NONE }
+            val statusOptions = listOf(TaskEndStatus.COMPLETED, TaskEndStatus.UNFINISHED,
+                TaskEndStatus.BROKEN)
 
             statusOptions.forEach { status ->
                 StatusSelectionButton(
@@ -133,7 +134,7 @@ fun TaskStatusMarkScreen(
                     viewModel.onEvent(TaskStatusEvent.TaskSubmit)
                     onNavigateBack()
                 },
-                enabled = viewModel.selectedStatus != TaskEndStatus.NONE,
+                enabled = viewModel.selectedStatus in statusOptions,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

@@ -54,8 +54,10 @@ class TaskExecutionService : Service() {
 
     @Inject
     lateinit var repository: PromiseTaskRepository
+
     @Inject
     lateinit var alarmPlayer: AlarmPlayer
+
     @Inject
     lateinit var userPrefs: PlanPrefsRepository
 
@@ -75,30 +77,47 @@ class TaskExecutionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        when (intent?.action) {
-            ACTION_BREAK_TASK -> {
-                val taskId = intent.getLongExtra(
-                    TaskAlarmScheduler.EXTRA_TASK_ID,
-                    -1L
-                )
-                serviceScope.launch {
-
-                    // Persist reality
-                    userPrefs.setPendingTask(taskId)
-
-                    // No need do vibration & sound => as user click just now
-//                    alarmPlayer.start()
-//                    vibrateFor2Seconds()
-                }
-                startActivity(
-                    Intent(this, TaskReflectionActivity::class.java).apply {
-                        setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
-                    }
-                )
-                return START_NOT_STICKY
-            }
-        }
+//        when (intent?.action) {
+//            ACTION_BREAK_TASK -> {
+//                Timber.tag(TAG).d("TaskExecutionService ACTION_BREAK_TASK called!")
+//
+//                val taskId = intent.getLongExtra(
+//                    TaskAlarmScheduler.EXTRA_TASK_ID,
+//                    -1L
+//                )
+//                serviceScope.launch {
+//
+//                    // Persist reality
+//                    userPrefs.setPendingTask(taskId)
+//
+//                    // No need do vibration & sound => as user click just now
+////                    alarmPlayer.start()
+////                    vibrateFor2Seconds()
+//                }
+//
+//                // Not show Break button => if not draw over other app permission
+//                Timber.d("Settings.canDrawOverlays(this) : ${Settings.canDrawOverlays(this)}")
+//                if (Settings.canDrawOverlays(this)) {
+//                    startActivity(
+//                        Intent(this, TaskReflectionActivity::class.java).apply {
+//                            // CLEAR_TOP prevents opening multiple instances of the reflection screen
+//                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//                            putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
+//                        }
+//                    )
+//                } else {
+//                    // Fallback: Ask for permission if it was somehow revoked
+//                    startActivity(
+//                        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+//                            data = "package:$packageName".toUri()
+//                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//                        }
+//                    )
+//                }
+//                // Return START_STICKY to ensure the service stays alive and ticking
+//                return START_STICKY
+//            }
+//        }
 
 
         // 1. Start foreground IMMEDIATELY with a placeholder notification
@@ -151,7 +170,7 @@ class TaskExecutionService : Service() {
         val notification = NotificationCompat.Builder(this, LockInApp.ALARM_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_app_notification)
             .setContentTitle("Action required")
-            .setContentText("Mark your previous focus block \n${task.title} ${task.startTime.formatTime()} – ${task.endTime.formatTime()}")
+            .setContentText("Mark your previous focus block \n${task.title} ${task.startTime.formatTime()} – ${(task.actualEndTime ?: task.endTimePlan).formatTime()}")
             .setOngoing(true)
             // We do not want notifications to flash when updated, or to continuously hog the status bar of the device,you must:
             .setOnlyAlertOnce(true)
@@ -201,11 +220,16 @@ class TaskExecutionService : Service() {
     }
 
     private fun breakTaskPendingIntent(taskId: Long): PendingIntent {
-        val intent = Intent(this, TaskExecutionService::class.java).apply {
-            action = ACTION_BREAK_TASK
+        // Direct it straight to the Activity
+        val intent = Intent(this, TaskReflectionActivity::class.java).apply {
             putExtra(TaskAlarmScheduler.EXTRA_TASK_ID, taskId)
+            // CLEAR_TOP ensures it doesn't open multiple copies
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
-        return PendingIntent.getService(
+
+        // Use getActivity instead of getService.
+        // Android will ALWAYS allow this to open because the user tapped the notification.
+        return PendingIntent.getActivity(
             this,
             taskId.toInt(),
             intent,
@@ -216,7 +240,7 @@ class TaskExecutionService : Service() {
     // Later use CountdownTimer, so do not manually need delay(1000)
     private fun startCountdown(task: PromiseTask) {
 
-        val endMillis = task.endTime.toMs(task.planDate)
+        val endMillis = task.endTimePlan.toMs(task.planDate)
         val startMillis = task.startTime.toMs(task.planDate)
 
         val totalDuration = endMillis - startMillis
@@ -264,7 +288,7 @@ class TaskExecutionService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setFullScreenIntent(
                 // TODO: is giving context = this@TaskExecutionService, is causing the problem?
-                taskStatusFullScreenPendingIntent( task.id),
+                taskStatusFullScreenPendingIntent(task.id),
                 true
             )
             .setOngoing(true)
@@ -312,23 +336,6 @@ class TaskExecutionService : Service() {
 //        stopSelf()
     }
 
-    fun LocalTime.toMs(planDate: LocalDate) = this.atDate(planDate)
-        .atZone(ZoneId.systemDefault())
-        .toInstant()
-        .toEpochMilli()
-
-    fun Long.formatTimeLeft(): String {
-        val totalSeconds = this / 1000
-        val hours = totalSeconds / 3600
-        val minutes = (totalSeconds % 3600) / 60
-        val seconds = totalSeconds % 60
-        return when {
-            hours > 0 -> String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
-            minutes > 0 -> String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
-            else -> String.format(Locale.getDefault(), "%d", seconds)
-        }
-    }
-
     private fun vibrateFor2Seconds() {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -362,11 +369,10 @@ class TaskExecutionService : Service() {
         Timber.tag(TAG).d("TaskExecutionService buildNotification Task : $task")
 
         val contentText =
-            "${task.startTime.formatTime()} – ${task.endTime.formatTime()}"
+            "${task.startTime.formatTime()} – ${task.endTimePlan.formatTime()}"
 
         val progress =
             remainingMillis / totalDuration.toFloat()
-
 
         return buildPlaceholderNotification()
             .setContentTitle("${task.title} ${remainingMillis.formatTimeLeft()}")
@@ -394,4 +400,21 @@ class TaskExecutionService : Service() {
 //        Timber.tag(Constants.TAG).d("WorkoutRunningNotification: close Notification")
 //        NotificationManagerCompat.from(context).cancel(WORKOUT_RUNNING_NOTIFICATION_ID)
 //    }
+}
+
+fun LocalTime.toMs(planDate: LocalDate) = this.atDate(planDate)
+    .atZone(ZoneId.systemDefault())
+    .toInstant()
+    .toEpochMilli()
+
+fun Long.formatTimeLeft(): String {
+    val totalSeconds = this / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return when {
+        hours > 0 -> String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
+        minutes > 0 -> String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+        else -> String.format(Locale.getDefault(), "%d", seconds)
+    }
 }

@@ -10,27 +10,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.White
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,11 +33,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.vikashsinghapp.lockin.data.entity.TaskDistractedOptions
 import com.vikashsinghapp.lockin.presentation.task_status.NoteInputArea
+import com.vikashsinghapp.lockin.presentation.tomorrow_focus.component.TimeField
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 import com.vikashsinghapp.lockin.ui.theme.Broken
 import com.vikashsinghapp.lockin.ui.theme.Running
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskDistractedReflectionScreen(
     @Suppress("unused") taskId: Long,
@@ -128,6 +125,24 @@ fun TaskDistractedReflectionScreen(
                     else -> "Reflect briefly (Mandatory)"
                 }
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "When did you actually stop?",
+                style = TextStyle(color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Align it to the start so it doesn't stretch across the whole screen
+            Row {
+                TimeField(
+                    modifier = Modifier.weight(0.5f), // Takes up half the row so it looks proportional
+                    time = viewModel.actualEndTime,
+                    onTimeChange = { viewModel.onEvent(TaskDistractReflectionEvent.ActualEndTimeChanged(it)) },
+                    enable = true
+                )
+                Spacer(modifier = Modifier.weight(0.5f))
+            }
 
             // Fill space to push button to bottom (optional, depends on preference)
             Spacer(modifier = Modifier.weight(1f))
@@ -220,45 +235,5 @@ fun StatusSelectionButton(
                 fontWeight = fontWeight
             )
         )
-    }
-}
-
-@Composable
-fun NoteInputArea(
-    modifier: Modifier = Modifier,
-    text: String,
-    hint: String = "What went well, what didn't, what could be improved?",
-       textStyle: TextStyle = TextStyle(),
-
-    onValueChange: (String) -> Unit
-) {
-    val focusRequester = remember { FocusRequester() }
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 120.dp) // Minimum height for the text area
-            .clip(RoundedCornerShape(8.dp))
-            .focusRequester(focusRequester)
-            .clickable {
-                focusRequester.requestFocus()
-            }
-            .background(SurfaceDarkElevated) // Matches your theme
-            .padding(16.dp)
-    ) {
-        // Using BasicTextField for complete control over the "block" look
-        BasicTextField(
-            value = text,
-            onValueChange = onValueChange,
-            textStyle = TextStyle(
-                color = Color.White,
-                fontSize = 15.sp,
-                lineHeight = 22.sp
-            ),
-            cursorBrush = SolidColor(Color.White),
-        )
-
-        if (text.isEmpty()) {
-            Text(text = hint, style = textStyle, color = Color.Gray)
-        }
     }
 }

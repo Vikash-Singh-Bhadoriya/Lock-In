@@ -60,6 +60,9 @@ dependencies {
     // Reorder plan's task
     implementation(libs.reorderable)
 
+    // Lottie Animation
+    implementation(libs.lottie.compose)
+
     // Room -> Local DB
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)

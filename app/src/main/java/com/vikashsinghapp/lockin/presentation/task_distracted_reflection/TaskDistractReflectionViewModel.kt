@@ -9,19 +9,19 @@ import androidx.lifecycle.viewModelScope
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import com.vikashsinghapp.lockin.data.entity.TaskDistractedOptions
 import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
+import com.vikashsinghapp.lockin.data.repository.JournalRepository
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
-import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
 class TaskDistractReflectionViewModel @Inject constructor(
-    private val repository: PromiseTaskRepository,
+    private val taskRepository: PromiseTaskRepository,
+    private val journalRepository: JournalRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -42,11 +42,18 @@ class TaskDistractReflectionViewModel @Inject constructor(
     var note by mutableStateOf("")
         private set
 
+    var actualEndTime by mutableStateOf(java.time.LocalTime.now())
+        private set
+
     init {
         viewModelScope.launch {
-            repository.getTaskById(taskId).collectLatest { task ->
-                title = task?.title
-                    ?: error("Task not found")
+            taskRepository.getTaskById(taskId).collectLatest { task ->
+                task?.let {
+                    this@TaskDistractReflectionViewModel.task = it
+                    title = it.title
+                } ?: run {
+                    error("Task not found")
+                }
             }
         }
     }
@@ -55,6 +62,9 @@ class TaskDistractReflectionViewModel @Inject constructor(
     fun onEvent(event: TaskDistractReflectionEvent) {
         viewModelScope.launch {
             when (event) {
+                is TaskDistractReflectionEvent.ActualEndTimeChanged -> {
+                    actualEndTime = event.time
+                }
                 is TaskDistractReflectionEvent.TaskStatusChanged -> {
                     selectedStatus = event.status
                 }
@@ -64,36 +74,37 @@ class TaskDistractReflectionViewModel @Inject constructor(
                 }
 
                 TaskDistractReflectionEvent.EndThisBlock -> {
-                    val noteMsg = task.note?.let {
-                        "${task.note}\n${
-                            LocalTime.now().formatTime()
-                        } ${selectedStatus.label}: $note"
-                    } ?: "${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+                    // 1. Format the reflection note
+                    val finalNote = "${selectedStatus.label}: $note"
 
+                    // 2. Save it directly to the Journal feed linked to this task
+                    journalRepository.addMessage(
+                        content = finalNote,
+                        duringPromiseTaskId = taskId
+                    )
 
-
+                    // 3. Update the task status (leave task.note alone/null)
                     task = task.copy(
                         status = TaskEndStatus.BROKEN,
-                        note = noteMsg
+                        actualEndTime = actualEndTime
                     )
                     Timber.d("TaskDistractReflectionViewModel TaskDistractReflectionEvent.EndThisBlock note: ${task.note}")
-                    repository.updateTask(task)
+                    taskRepository.updateTask(task)
                 }
 
                 TaskDistractReflectionEvent.ResumeThisBlock -> {
 
-                    val noteMsg = task.note?.let {
-                        "${task.note}\n${
-                            LocalTime.now().formatTime()
-                        } ${selectedStatus.label}: $note"
-                    } ?: "${LocalTime.now().formatTime()} ${selectedStatus.label}: $note"
+                    val finalNote = "${selectedStatus.label}: $note"
 
-                    task = task.copy(
-                        status = TaskEndStatus.NONE,
-                        note = noteMsg
+                    journalRepository.addMessage(
+                        content = finalNote,
+                        duringPromiseTaskId = taskId
                     )
+
+                    // Return to default state. If time is current, UI will render as Running.
+                    task = task.copy(status = TaskEndStatus.PENDING)
                     Timber.d("TaskDistractReflectionViewModel TaskDistractReflectionEvent.ResumeThisBlock note: ${task.note}")
-                    repository.updateTask(task)
+                    taskRepository.updateTask(task)
                 }
             }
         }

@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,11 +49,24 @@ fun HourBasedTimeline(
 ) {
     val scrollState = rememberScrollState()
     val totalHeight = (24 * HOUR_HEIGHT).dp
+    val density = LocalDensity.current
 
-    // Auto-scroll to current time on first load
+    // Auto-scroll to current time on first load, perfectly centered.
     LaunchedEffect(Unit) {
-        val scrollTarget = (now.hour * HOUR_HEIGHT).dp
-        scrollState.scrollTo(scrollTarget.value.toInt())
+        if (selectedDate == LocalDate.now()) {
+            // 1. Calculate the exact minutes passed to match the red line
+            val minutesPassed = now.hour * 60 + now.minute
+            val exactTimeDp = (minutesPassed * HOUR_HEIGHT / 60f).dp
+
+            // 2. Subtract a buffer so the red line isn't touching the absolute top of the screen
+            val targetDp = exactTimeDp - 100.dp
+
+            // 3. Convert DP directly to Pixels for the scroll state
+            val scrollTargetPx = with(density) { targetDp.toPx().coerceAtLeast(0f).toInt() }
+
+            // 4. Smooth scroll to the line
+            scrollState.scrollTo(scrollTargetPx)
+        }
     }
 
     Box(
@@ -89,7 +103,7 @@ fun HourBasedTimeline(
 fun CalendarTaskItem(task: PromiseTask, now: LocalTime, onNavigateToTaskDetail: () -> Unit) {
     val startMinutes = task.startTime.hour * 60 + task.startTime.minute
     val durationMinutes =
-        java.time.Duration.between(task.startTime, task.endTime).toMinutes().toInt()
+        java.time.Duration.between(task.startTime, task.actualEndTime ?: task.endTimePlan).toMinutes().toInt()
 
     val topOffset = (startMinutes * HOUR_HEIGHT / 60).dp
     val blockHeight = (durationMinutes * HOUR_HEIGHT / 60).dp
@@ -98,7 +112,7 @@ fun CalendarTaskItem(task: PromiseTask, now: LocalTime, onNavigateToTaskDetail: 
         TaskEndStatus.COMPLETED -> Completed
         TaskEndStatus.UNFINISHED -> Unfinished
         TaskEndStatus.BROKEN -> Broken
-        TaskEndStatus.NONE -> if (task.isCurrent(now)) Running else NotStarted
+        else -> if (task.isCurrent(now)) Running else NotStarted
     }
 
     Box(
@@ -125,7 +139,7 @@ fun CalendarTaskItem(task: PromiseTask, now: LocalTime, onNavigateToTaskDetail: 
             )
             if (blockHeight > 50.dp) { // Only show time if block is large enough
                 Text(
-                    text = "${task.startTime.formatTime()} - ${task.endTime.formatTime()}",
+                    text = "${task.startTime.formatTime()} - ${(task.actualEndTime ?: task.endTimePlan).formatTime()}",
                     color = White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.bodySmall
                 )

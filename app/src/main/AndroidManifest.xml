@@ -4,12 +4,13 @@
 
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!--  For Display over other apps  -->
 <!--    "Display over other apps" lets your app show overlays (like chat heads or floating windows).
         "Full-screen notifications" is required for your app to show full-screen intents (like alarms or incoming calls). -->
-<!--    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />-->
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+<!--    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> &lt;!&ndash; If I disable SYSTEM_ALERT_WINDOW permission => then not show Display over others apps permission in settings => NOT SHOW REFLECTION SCREEN AT ALL&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />-->
 
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -40,7 +41,6 @@
             android:theme="@style/Theme.LockIn">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -69,6 +69,18 @@
             android:name=".system.receiver.TaskStartReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <receiver
+            android:name=".system.deviceadmin.LockInDeviceAdminReceiver"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_receiver" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:name=".system.service.TaskExecutionService"

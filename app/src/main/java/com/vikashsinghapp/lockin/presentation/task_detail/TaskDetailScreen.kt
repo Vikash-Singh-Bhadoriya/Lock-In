@@ -2,7 +2,6 @@ package com.vikashsinghapp.lockin.presentation.task_detail
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.HorizontalRule
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -47,10 +48,15 @@ import com.vikashsinghapp.lockin.data.entity.JournalMessage
 import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.presentation.journal.toTimeString
+import com.vikashsinghapp.lockin.presentation.today.isCurrent
+import com.vikashsinghapp.lockin.presentation.tomorrow_focus.component.TimeField
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
+import com.vikashsinghapp.lockin.ui.theme.NotStarted
 import com.vikashsinghapp.lockin.ui.theme.Running
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
+import java.time.LocalTime
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskDetailScreen(
     onBack: () -> Unit,
@@ -88,26 +94,71 @@ fun TaskDetailScreen(
 
                 // --- Task Identity ---
                 Text(text = task.title, color = White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    text = "${task.startTime.formatTime()} – ${task.endTime.formatTime()}",
-                    color = Color.Gray, fontSize = 16.sp
-                )
+                val now = LocalTime.now()
+
+                // A task is "future" if it hasn't started yet AND hasn't been marked broken/completed
+                val isFutureTask = now.isBefore(task.startTime) && task.status == TaskEndStatus.PENDING
+
+                // With your interactive TimeFields:
+                if(isFutureTask) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TimeField(
+                            modifier = Modifier,
+                            time = task.startTime,
+                            onTimeChange = { viewModel.onEvent(TaskDetailEvent.UpdateStartTime(it)) },
+                            enable = true // Only editable if it's in the future!
+                        )
+
+                        Icon(
+                            Icons.Default.HorizontalRule,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+
+                        TimeField(
+                            modifier = Modifier,
+                            time = task.actualEndTime ?: task.endTimePlan,
+                            onTimeChange = { viewModel.onEvent(TaskDetailEvent.UpdateEndTime(it)) },
+                            enable = true
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "${task.startTime.formatTime()} – ${(task.actualEndTime ?: task.endTimePlan).formatTime()}",
+                        color = Color.Gray, fontSize = 16.sp
+                    )
+                }
 
                 Spacer(Modifier.height(24.dp))
 
-                // --- Status Picker (For corrections/updates) ---
-                Text("Update Task Status", color = White, fontWeight = FontWeight.SemiBold)
+                // Status Picker
+                Text("Task Status", color = White, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TaskEndStatus.entries.filter { it != TaskEndStatus.NONE }.forEach { status ->
-                        StatusSelectionButton(
-                            status = status,
-                            isSelected = task.status == status,
-                            selectedColor = status.color,
-                            onSelect = { viewModel.onEvent(TaskDetailEvent.UpdateStatus(it)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+
+                // Calculate the Derived State dynamically
+                val displayColor = when (task.status) {
+                    TaskEndStatus.PENDING -> if (task.isCurrent(now)) Running else NotStarted
+                    else -> task.status.color
+                }
+
+                val displayLabel = when (task.status) {
+                    TaskEndStatus.PENDING -> if (task.isCurrent(now)) "Running" else "Not Started"
+                    else -> task.status.label
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(displayColor)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (task.isCurrent(now)) Running else NotStarted
+                    Text(text = displayLabel, color = White, fontSize = 13.sp)
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -126,18 +177,6 @@ fun TaskDetailScreen(
                         Spacer(Modifier.height(8.dp))
                     }
                 }
-
-                // --- Original Task Note (From Review/Break screen) ---
-                task.note?.let {
-                    Spacer(Modifier.height(16.dp))
-                    Text("Original Reflection", color = Color.Gray, fontSize = 12.sp)
-                    Box(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                            .background(SurfaceDarkElevated).padding(12.dp)
-                    ) {
-                        Text(it, color = White, fontSize = 14.sp)
-                    }
-                }
             }
         }
     }
@@ -154,26 +193,6 @@ fun LogMessageItem(message: JournalMessage) {
             text = message.timestamp.toTimeString(),
             color = Color.Gray, fontSize = 11.sp, modifier = Modifier.align(Alignment.End)
         )
-    }
-}
-
-@Composable
-fun StatusSelectionButton(
-    status: TaskEndStatus,
-    isSelected: Boolean,
-    selectedColor: Color,
-    onSelect: (TaskEndStatus) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) selectedColor else SurfaceDarkElevated)
-            .clickable { onSelect(status) },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = status.label, color = if (isSelected) White else Color.Gray, fontSize = 13.sp)
     }
 }
 
