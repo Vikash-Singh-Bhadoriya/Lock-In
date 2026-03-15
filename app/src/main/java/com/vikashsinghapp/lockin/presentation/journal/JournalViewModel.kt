@@ -41,7 +41,7 @@ class JournalViewModel @Inject constructor(
     // 2. Dynamically extract unique categories from the messages
     val categories: StateFlow<List<String>> = allMessages.map { messages ->
         val uniqueCats = messages
-            .mapNotNull { it.taskCategory.takeIf { c -> c.isNotBlank() } }
+            .mapNotNull { it.taskCategory?.takeIf { c -> c.isNotBlank() } }
             .toSet()
             .sorted()
 
@@ -56,7 +56,8 @@ class JournalViewModel @Inject constructor(
     ) { messages, category ->
         when (category) {
             "All" -> messages
-            "Uncategorized" -> messages.filter { it.taskCategory.isBlank() }
+            // Use isNullOrBlank() to catch both nulls and empty strings
+            "Uncategorized" -> messages.filter { it.taskCategory.isNullOrBlank() }
             else -> messages.filter { it.taskCategory == category }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -75,7 +76,7 @@ class JournalViewModel @Inject constructor(
 
             // 2. Find if any task is currently running right now
             val runningTask = todayTasks.find { task ->
-                !now.isBefore(task.startTime) && now.isBefore(task.actualEndTime) && task.status == TaskEndStatus.PENDING
+                !now.isBefore(task.startTime) && now.isBefore(task.actualEndTime ?: task.endTimePlan) && task.status == TaskEndStatus.PENDING
             }
 
             // 3. Save the message. If runningTask is null, it saves as a general log.
@@ -102,13 +103,13 @@ class JournalViewModel @Inject constructor(
             messagesToExport.forEach { msgWithTask ->
                 val timeString = formatter.format(Date(msgWithTask.message.timestamp))
 
-                // If there is no task title, just export the time and message
-                if (msgWithTask.taskTitle.isBlank()) {
+                // Use isNullOrBlank() so it resolves to a strict Boolean, not Boolean?
+                if (msgWithTask.taskTitle.isNullOrBlank()) {
                     sb.append("[$timeString]\n")
                 } else {
                     val taskName = msgWithTask.taskTitle
-                    // Otherwise, include the task data
-                    val cat = msgWithTask.taskCategory.takeIf { it.isNotBlank() } ?: "Uncategorized"
+                    // Use safe call `?.` before takeIf
+                    val cat = msgWithTask.taskCategory?.takeIf { it.isNotBlank() } ?: "Uncategorized"
                     sb.append("[$timeString] $cat • $taskName\n")
                 }
 
@@ -136,6 +137,6 @@ class JournalViewModel @Inject constructor(
 data class JournalMessageWithTask(
     // ap the standard JournalMessage columns (id, content, timestamp etc) directly into that property.
     @Embedded val message: JournalMessage,
-    val taskTitle: String,
-    val taskCategory: String
+    val taskTitle: String?, //bcs a general msg has not task title or task category
+    val taskCategory: String?
 )

@@ -58,9 +58,9 @@ fun MessageList(
         contentPadding = PaddingValues(vertical = 12.dp)
     ) {
         items(messages, key = { it.message.id }) { message ->
-            MessageBubble(message, {
+            MessageBubble(message) {
                 onDeleteMessage(message)
-            })
+            }
         }
     }
 }
@@ -77,23 +77,30 @@ fun MessageBubble(item: JournalMessageWithTask, onDeleteMessage: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
-        // Tag Row
-        // ONLY SHOW TAG ROW IF IT BELONGS TO A TASK
-        if (item.taskTitle.isNotBlank()) {
+        // 1. Check if it's tied to a real task by checking the ID
+        val isTaskLog = item.message.duringPromiseTaskId != null
+
+        if (isTaskLog) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Safely handle nullable category
+                val rawCat = item.taskCategory?.trim() ?: "" // <--- Safe call ?.
+                val displayCategory = if (rawCat.isBlank() || rawCat.equals("Uncategorized", ignoreCase = true)) "UNCATEGORIZED" else rawCat
+
                 Text(
-                    text = item.taskCategory.uppercase(),
-                    color = Running, // Your primary "Running" color
+                    text = displayCategory.uppercase(),
+                    color = Running,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 4.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-            }
-            Text(text = "• ${item.taskTitle}", color = Color.Gray, fontSize = 10.sp)
-        }
 
-        Spacer(Modifier.height(4.dp))
+                // Safely handle nullable title
+                val displayTitle = item.taskTitle?.trim()?.takeIf { it.isNotBlank() } ?: "Task" // <--- Safe call ?.
+                Text(text = "• $displayTitle", color = Color.Gray, fontSize = 10.sp)
+            }
+            Spacer(Modifier.height(4.dp))
+        }
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(16.dp))
