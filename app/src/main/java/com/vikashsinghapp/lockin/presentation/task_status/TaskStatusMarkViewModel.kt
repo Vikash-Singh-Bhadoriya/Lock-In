@@ -29,7 +29,6 @@ class TaskStatusMarkViewModel @Inject constructor(
             error("TaskId missing")
         }
 
-
     private lateinit var task: PromiseTask
 
     var title by mutableStateOf("")

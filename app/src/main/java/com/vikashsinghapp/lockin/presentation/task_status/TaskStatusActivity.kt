@@ -4,13 +4,13 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import com.vikashsinghapp.lockin.MainActivity
-import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
+import com.vikashsinghapp.lockin.data.repository.AppPrefsRepository
 import com.vikashsinghapp.lockin.system.alarm.AlarmPlayer
 import com.vikashsinghapp.lockin.system.alarm.TaskAlarmScheduler
 import com.vikashsinghapp.lockin.system.service.TaskExecutionService
@@ -24,16 +24,26 @@ import javax.inject.Inject
 class TaskStatusActivity : ComponentActivity() {
 
     @Inject lateinit var alarmPlayer: AlarmPlayer
-    @Inject lateinit var userPrefs: PlanPrefsRepository
+    @Inject lateinit var userPrefs: AppPrefsRepository
 
     private var submitted = false
 
-    @RequiresApi(Build.VERSION_CODES.O_MR1)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setShowWhenLocked(true)
-        setTurnScreenOn(true)
+        // --- to wake the screen and bypass lock! ---
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            // Fallback for older Android versions
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
 
         // Prevent back press
         onBackPressedDispatcher.addCallback(this) {

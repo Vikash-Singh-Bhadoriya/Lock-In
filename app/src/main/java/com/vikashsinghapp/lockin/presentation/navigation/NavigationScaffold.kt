@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
@@ -27,6 +28,8 @@ import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 @Composable
 fun NavigationScaffold(
     navController: NavHostController,
+    startDestination: String,
+    onCompleteOnboarding: () -> Unit,
     shouldShowPermissionRationale: (String) -> Boolean,
     drawerViewModel: DrawerViewModel = hiltViewModel(),
 ) {
@@ -36,6 +39,9 @@ fun NavigationScaffold(
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.TomorrowFocusScreen.route
+
+    // Extract the pure base route (strips away ?date= or /taskId)
+    val baseRoute = currentRoute.substringBefore("?").substringBefore("/")
 
     LaunchedEffect(isDrawerOpen) {
         if (isDrawerOpen) drawerState.open() else drawerState.close()
@@ -50,15 +56,20 @@ fun NavigationScaffold(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        // Disable swipe-to-open on the onboarding screen, active focus screen
+        // Screen.ActiveFocusScreen.route + "/{taskId}", the currentRoute at runtime will actually be something like "active_focus_screen/123".
+        gesturesEnabled = baseRoute != Screen.OnboardingScreen.route && baseRoute != Screen.ActiveFocusScreen.route,
         drawerContent = {
             DrawerContent(
-                currentRoute = currentRoute,
+                currentRoute = baseRoute,
                 onDestinationClicked = { screen ->
-                    if (screen.route != currentRoute) {
+                    if (screen.route != baseRoute) {
                         navController.navigate(screen.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            // Use findStartDestination().id to prevent the navigation from being swallowed
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                     drawerViewModel.closeDrawer()
@@ -178,6 +189,8 @@ fun NavigationScaffold(
             Navigation(
                 modifier = Modifier.padding(innerPadding),
                 navController = navController,
+                startDestination = startDestination,
+                onCompleteOnboarding = onCompleteOnboarding,
                 shouldShowPermissionRationale = shouldShowPermissionRationale,
                 snackbarHostState = snackbarHostState,
                 onOpenDrawer = { drawerViewModel.openDrawer() }
