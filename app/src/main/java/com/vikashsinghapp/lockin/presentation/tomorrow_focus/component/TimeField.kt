@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -52,6 +53,8 @@ import java.time.LocalTime
 @Composable
 fun TimeField(
     modifier: Modifier = Modifier,
+    bgColor: Color = BackgroundDark,
+    borderColor: Color = White,
     time: LocalTime,
     onTimeChange: (LocalTime) -> Unit,
     enable: Boolean,
@@ -70,8 +73,8 @@ fun TimeField(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(BackgroundDark)
-            .border(1.dp, if (!enable) Color.Gray else Color.White, RoundedCornerShape(16.dp))
+            .background(bgColor)
+            .border(1.dp, if (!enable) Color.Gray else borderColor, RoundedCornerShape(16.dp))
             .padding(8.dp)
             .mediaQuery(
                 enable, Modifier.clickable {

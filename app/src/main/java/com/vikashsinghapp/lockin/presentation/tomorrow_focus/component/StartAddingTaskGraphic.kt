@@ -47,7 +47,7 @@ fun BoxScope.StartAddingTaskGraphic() {
         )
         Text(
             modifier = Modifier.padding(14.dp),
-            text = "Tap 'Add Task' to build your routine.",
+            text = "Tap '+' to add today's tasks",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = White

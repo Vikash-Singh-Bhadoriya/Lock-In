@@ -3,11 +3,9 @@ package com.vikashsinghapp.lockin.data.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "categories")
-data class
- CategoryEntity(
+@Entity(tableName = "templates")
+data class TemplateEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
-    val name: String,
-    val colorValue: Long = 0xFF8C9EFF // ARGB format: Alpha (FF) + Hex (8C9EFF)
+    val name: String // e.g., "Weekday", "Weekend"
 )
