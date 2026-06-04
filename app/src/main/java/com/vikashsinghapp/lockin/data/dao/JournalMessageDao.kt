@@ -36,4 +36,7 @@ interface JournalMessageDao {
 
     @Delete
     suspend fun delete(message: JournalMessage)
+
+     @Query("UPDATE journal_messages SET duringPromiseTaskId = NULL WHERE duringPromiseTaskId = :taskId")
+     suspend fun orphanMessagesForTask(taskId: Long)
 }

@@ -45,8 +45,18 @@ class JournalViewModel @Inject constructor(
             .toSet()
             .sorted()
 
-        // Add "All" at the front, and "Uncategorized" at the end if needed
-        listOf("All") + uniqueCats
+        // --- Check if we have any messages without a category ---
+        val hasUncategorized = messages.any { it.taskCategory.isNullOrBlank() }
+
+        val result = mutableListOf("All")
+        result.addAll(uniqueCats)
+
+        // Only show "Uncategorized" filter if there are actually categorized messages to filter against
+        if (hasUncategorized && uniqueCats.isNotEmpty()) {
+            result.add("Uncategorized")
+        }
+
+        result
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf("All"))
 
     // 3. Filter messages based on the selected category
@@ -61,6 +71,36 @@ class JournalViewModel @Inject constructor(
             else -> messages.filter { it.taskCategory == category }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _selectedMessages = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedMessages = _selectedMessages.asStateFlow()
+
+    fun toggleMessageSelection(messageId: Long) {
+        val currentSet = _selectedMessages.value.toMutableSet()
+        if (currentSet.contains(messageId)) {
+            currentSet.remove(messageId)
+        } else {
+            currentSet.add(messageId)
+        }
+        _selectedMessages.value = currentSet
+    }
+
+    fun clearSelection() {
+        _selectedMessages.value = emptySet()
+    }
+
+    fun deleteSelectedMessages() {
+        viewModelScope.launch {
+            val idsToDelete = _selectedMessages.value
+            if (idsToDelete.isEmpty()) return@launch
+
+            // Delete them all. (You might need to add a deleteMessages(ids) function to your repo/DAO for efficiency)
+            allMessages.value.filter { idsToDelete.contains(it.message.id) }.forEach {
+                repository.deleteMessage(it.message)
+            }
+            clearSelection()
+        }
+    }
 
     fun setCategory(category: String) { _selectedCategory.value = category }
 

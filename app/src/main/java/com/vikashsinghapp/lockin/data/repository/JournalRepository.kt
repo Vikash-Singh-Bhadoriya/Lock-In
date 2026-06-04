@@ -39,4 +39,9 @@ class JournalRepository(
     suspend fun deleteMessage(journalMessage: JournalMessage) {
         journalDao.delete(journalMessage)
     }
+
+    // keeping the journal text but removing the task link
+    suspend fun orphanMessagesForTask(taskId: Long) {
+        journalDao.orphanMessagesForTask(taskId)
+    }
 }

@@ -4,17 +4,23 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.vikashsinghapp.lockin.data.repository.AppPrefsRepository
 import com.vikashsinghapp.lockin.system.deviceadmin.LockInDeviceAdminReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val prefs: AppPrefsRepository
 ) : ViewModel() {
 
     private val devicePolicyManager =
@@ -29,6 +35,10 @@ class SettingsViewModel @Inject constructor(
 
     private val _showAdminDialog = MutableStateFlow(false)
     val showAdminDialog: StateFlow<Boolean> = _showAdminDialog.asStateFlow()
+
+    val isReminderEnabled = prefs.isReminderEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), true)
+    val reminderHour = prefs.reminderHour.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 8)
+    val reminderMinute = prefs.reminderMinute.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 15)
 
     fun onToggleChanged(checked: Boolean) {
         if (checked) {
@@ -48,6 +58,14 @@ class SettingsViewModel @Inject constructor(
 
     fun onDialogDismissed() {
         _showAdminDialog.value = false
+    }
+
+    fun setReminderEnabled(checked: Boolean) {
+        viewModelScope.launch { prefs.setReminderEnabled(checked) }
+    }
+
+    fun setReminderTime(hour: Int, minutes: Int) {
+        viewModelScope.launch { prefs.setReminderTime(hour, minutes) }
     }
 
     /** Call after returning from the system Device Admin screen */
