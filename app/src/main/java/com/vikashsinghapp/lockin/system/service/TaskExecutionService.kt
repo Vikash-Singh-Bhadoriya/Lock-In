@@ -4,8 +4,8 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Build
 import android.os.CountDownTimer
 import android.os.Looper
@@ -14,13 +14,16 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import com.vikashsinghapp.lockin.Constants
 import com.vikashsinghapp.lockin.Constants.TAG
 import com.vikashsinghapp.lockin.LockInApp
 import com.vikashsinghapp.lockin.LockInApp.Companion.CHANNEL_ID
+import com.vikashsinghapp.lockin.MainActivity
 import com.vikashsinghapp.lockin.R
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
-import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
+import com.vikashsinghapp.lockin.data.repository.AppPrefsRepository
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import com.vikashsinghapp.lockin.formatTime
 import com.vikashsinghapp.lockin.presentation.task_distracted_reflection.TaskReflectionActivity
@@ -59,7 +62,7 @@ class TaskExecutionService : Service() {
     lateinit var alarmPlayer: AlarmPlayer
 
     @Inject
-    lateinit var userPrefs: PlanPrefsRepository
+    lateinit var userPrefs: AppPrefsRepository
 
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -139,6 +142,14 @@ class TaskExecutionService : Service() {
                 .d("TaskExecutionService onStartCommand Task : $task inside CoroutineScope ")
             task?.let {
 
+                // --- Abort if task is already over! ---
+                val endMillis = it.endTimePlan.toMs(it.planDate)
+                if (endMillis <= System.currentTimeMillis()) {
+                    Timber.tag(TAG).d("Task ${it.title} is already over. Aborting service.")
+                    stopSelf()
+                    return@launch
+                }
+
                 val pending = userPrefs.pendingTaskId.first()
                 if (pending != null) {
                     Timber.e("BLOCKED: Pending task $pending not marked")
@@ -149,11 +160,45 @@ class TaskExecutionService : Service() {
                     return@launch
                 }
 
+                // --- Vibrate to notify the user the task has started! ---
+                vibrateFor2Seconds(500L)
+                alarmPlayer.playNotificationSound()
+
+                // --- Force open MainActivity over the Lock Screen! ---
+                try {
+                    val intent = Intent(this@TaskExecutionService, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+//                        putExtra(Constants.NAVIGATE_TO_TIMELINE, true)
+                        putExtra(Constants.NAVIGATE_TO_ACTIVE_FOCUS_TASK_ID, taskId)
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to launch MainActivity from background")
+                }
+
+                // Save the running state to DataStore right before starting the timer
+                serviceScope.launch {
+                    userPrefs.setActiveRunningTask(taskId)
+                }
                 startCountdown(it)
             } ?: stopSelf()
         }
 
         return START_STICKY
+    }
+
+    private fun mainActivityPendingIntent(taskId: Long = -1): PendingIntent {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            // Send the specific ID instead of a boolean
+            putExtra(Constants.NAVIGATE_TO_ACTIVE_FOCUS_TASK_ID, taskId)
+        }
+        return PendingIntent.getActivity(
+            this,
+            taskId.toInt(), // Use the taskId as the request code to prevent overwrites
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     private fun showPendingBlockNotification(task: PromiseTask) {
@@ -170,7 +215,7 @@ class TaskExecutionService : Service() {
         val notification = NotificationCompat.Builder(this, LockInApp.ALARM_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_app_notification)
             .setContentTitle("Action required")
-            .setContentText("Mark your previous focus block \n${task.title} ${task.startTime.formatTime()} – ${(task.actualEndTime ?: task.endTimePlan).formatTime()}")
+            .setContentText("Mark your previous task \n${task.title} ${task.startTime.formatTime()} – ${(task.actualEndTime ?: task.endTimePlan).formatTime()}")
             .setOngoing(true)
             // We do not want notifications to flash when updated, or to continuously hog the status bar of the device,you must:
             .setOnlyAlertOnce(true)
@@ -197,7 +242,7 @@ class TaskExecutionService : Service() {
     companion object {
         const val START_NOTIFICATION_ID = 1999
         const val BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID = 2000
-        const val ACTION_BREAK_TASK = "ACTION_BREAK_TASK"
+//        const val ACTION_BREAK_TASK = "ACTION_BREAK_TASK"
 
     }
 
@@ -241,7 +286,10 @@ class TaskExecutionService : Service() {
     private fun startCountdown(task: PromiseTask) {
 
         val endMillis = task.endTimePlan.toMs(task.planDate)
-        val startMillis = task.startTime.toMs(task.planDate)
+
+        // Calculate duration based on when they ACTUALLY started
+        val startToUse = task.actualStartTime ?: task.startTime
+        val startMillis = startToUse.toMs(task.planDate)
 
         val totalDuration = endMillis - startMillis
 
@@ -268,6 +316,9 @@ class TaskExecutionService : Service() {
 
         Timber.tag(TAG).d("HELLO    SHOWING markTaskStatusNotification")
 
+        //Clear the running state because the timer hit 00:00 natively!
+        userPrefs.clearActiveRunningTask()
+
         // 🔐 Persist reality FIRST
         userPrefs.setPendingTask(task.id)
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -276,18 +327,16 @@ class TaskExecutionService : Service() {
 
         vibrateFor2Seconds()
 
-
         val markTaskStatusNotification = NotificationCompat.Builder(
             this@TaskExecutionService,
             LockInApp.ALARM_CHANNEL_ID
         )
             .setSmallIcon(R.drawable.ic_app_notification)
-            .setContentTitle("Focus block ended")
-            .setContentText("Mark how this block went")
+            .setContentTitle("Task ended")
+            .setContentText("Mark how this Task went")
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setFullScreenIntent(
-                // TODO: is giving context = this@TaskExecutionService, is causing the problem?
                 taskStatusFullScreenPendingIntent(task.id),
                 true
             )
@@ -296,7 +345,7 @@ class TaskExecutionService : Service() {
             .build()
 
         val manager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         manager.notify(
             BLOCK_MARK_STATUS_SCREEN_NOTIFICATION_ID,
@@ -336,7 +385,7 @@ class TaskExecutionService : Service() {
 //        stopSelf()
     }
 
-    private fun vibrateFor2Seconds() {
+    private fun vibrateFor2Seconds(ms: Long = 2000L) {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
             manager.defaultVibrator
@@ -344,11 +393,23 @@ class TaskExecutionService : Service() {
             @Suppress("DEPRECATION")
             getSystemService(VIBRATOR_SERVICE) as Vibrator
         }
-        vibrator.vibrate(VibrationEffect.createOneShot(2000L, VibrationEffect.DEFAULT_AMPLITUDE))
+        vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
-    fun buildPlaceholderNotification() =
-        NotificationCompat.Builder(this, CHANNEL_ID)
+    fun buildPlaceholderNotification(): NotificationCompat.Builder {
+        // 1. Check if the system is in Dark Mode
+        val isDarkMode =
+            (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+        // 2. Choose your accent color (Create these in your colors.xml if you haven't)
+        // Note: You usually use the SAME accent color for both, but you can split them if needed.
+        val accentColor = if (isDarkMode) {
+            ContextCompat.getColor(this, R.color.running_blue_dark)
+        } else {
+            ContextCompat.getColor(this, R.color.running_blue_light)
+        }
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_app_notification)
             .setOngoing(true)
             // We do not want notifications to flash when updated, or to continuously hog the status bar of the device,you must:
@@ -357,9 +418,15 @@ class TaskExecutionService : Service() {
             .setAutoCancel(false)
             .setContentTitle("Starting task...")
             .setContentText("Preparing your focus session")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(Notification.CATEGORY_SERVICE)
-            .setColorized(true)
+            .setPriority(NotificationCompat.PRIORITY_MAX) // MAX priority required for screen wake
+            .setCategory(Notification.CATEGORY_ALARM) // ALARM category bypasses Do Not Disturb
+//            .setPriority(NotificationCompat.PRIORITY_HIGH)
+//            .setCategory(Notification.CATEGORY_SERVICE)
+            .setColor(accentColor)
+            .setContentIntent(mainActivityPendingIntent(-1)) // When click notification
+            // --- This tells Android to pop this over the lock screen! ---
+            .setFullScreenIntent(mainActivityPendingIntent(-1), true)
+    }
 
     private fun updateNotification(
         task: PromiseTask,
@@ -383,6 +450,12 @@ class TaskExecutionService : Service() {
                 "Break",
                 breakTaskPendingIntent(task.id)
             )
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setContentIntent(mainActivityPendingIntent(task.id)) // When click notification
+            // --- This tells Android to pop this over the lock screen! ---
+            .setFullScreenIntent(mainActivityPendingIntent(task.id), true)
+
 
             // Remove Previous Start & Stop Actions
 //            .clearActions()

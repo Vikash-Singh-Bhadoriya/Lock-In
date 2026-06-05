@@ -6,19 +6,18 @@ import com.vikashsinghapp.lockin.data.entity.CategoryEntity
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.data.repository.CategoryRepository
-import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
+import com.vikashsinghapp.lockin.validateTaskUpdate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -30,17 +29,18 @@ data class TodayUiState(
     val isDateCalendarVisible: Boolean = false,
 //    val currentTime: String = "",
     val tasks: List<PromiseTask> = emptyList(),
+    val isLoading: Boolean = true
 )
 
 @HiltViewModel
 class TaskViewModel @Inject constructor(
     private val promiseRepository: PromiseTaskRepository,
     private val categoryRepository: CategoryRepository,
-    planPrefs: PlanPrefsRepository
+//    planPrefs: AppPrefsRepository
 ) : ViewModel() {
 
-    val isLocked = planPrefs.isPlanLocked
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
+//    val isLocked = planPrefs.isPlanLocked
+//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
 
 //    val hasPendingBlock = prefs.pendingTaskId
 //        .map { it != null }
@@ -86,7 +86,8 @@ class TaskViewModel @Inject constructor(
                     Timber.d("TodayViewModel task: $todayTasks")
                     _uiState.value = _uiState.value.copy(
 //                        currentTime = System.currentTimeMillis().toTimeString(),
-                        tasks = todayTasks.sortedBy { it.startTime }
+                        tasks = todayTasks.sortedBy { it.startTime },
+                        isLoading = false
                     )
                 }
         }
@@ -103,11 +104,16 @@ class TaskViewModel @Inject constructor(
             is TaskScreenEvent.OnDateSelected -> {
                 job?.cancel()
                 _selectedDate.value = event.date
+
+                // Show loading state while fetching new date
+                _uiState.value = _uiState.value.copy(isLoading = true)
+
                 job = viewModelScope.launch {
                     promiseRepository.getAllPromiseTasks(_selectedDate.value)
                         .collectLatest { dateTasks ->
                             _uiState.value = _uiState.value.copy(
-                                tasks = dateTasks.sortedBy { it.startTime }
+                                tasks = dateTasks.sortedBy { it.startTime },
+                                isLoading = false
                             )
                         }
                 }
@@ -135,18 +141,70 @@ class TaskViewModel @Inject constructor(
                         category = event.category,
                         startTime = event.startTime,
                         endTimePlan = event.endTimePlan,
-                        status = TaskEndStatus.PENDING,
                     )
-                    promiseRepository.addTask(newTask)
-                    _eventFlow.emit(TaskScreenViewModelUiEvent.SchedulePlanTaskAlarm(newTask))
+
+
+                    val tasks = _uiState.value.tasks.toMutableList()
+                    tasks.add(newTask)
+
+                    // Use new Id
+                    val newId = promiseRepository.addTask(newTask)
+                    _eventFlow.emit(TaskScreenViewModelUiEvent.SchedulePlanTaskAlarm(newTask.copy(id = newId)))
                 }
             }
+        }
+    }
+    fun validateAndInjectTask(title: String, startTime: LocalTime, endTime: LocalTime, category: String): String? {
+        val newTask = PromiseTask(
+            id = 0, planDate = LocalDate.now(), title = title,
+            category = category, startTime = startTime, endTimePlan = endTime,
+            status = TaskEndStatus.PENDING,
+        )
+
+        // Pass the whole list to check for overlaps. fromFab = false means 5 min allowed.
+        val error = validateTaskUpdate(newTask, _uiState.value.tasks, require30Min = false)
+        if (error != null) return error
+
+        // If valid, fire the standard inject event
+        onEvent(TaskScreenEvent.InjectTask(title, startTime, endTime, category))
+        return null
+    }
+
+    // --- Category Management Functions ---
+    fun addCategory(category: CategoryEntity) {
+        viewModelScope.launch {
+            // Assuming your categoryRepository has this method from your TomorrowFocusViewModel
+            categoryRepository.insertCategory(category)
+        }
+    }
+
+    fun editCategory(oldCategory: CategoryEntity, updatedCategory: CategoryEntity) {
+        viewModelScope.launch {
+
+            categoryRepository.updateCategory(oldName = oldCategory.name, updatedCategory = updatedCategory)
+
+            // 2. Instantly update the UI memory state
+            val tasks = _uiState.value.tasks.toMutableList()
+            for (i in tasks.indices) {
+                if (tasks[i].category == oldCategory.name) {
+                    tasks[i] = tasks[i].copy(category = updatedCategory.name)
+                }
+            }
+            _uiState.update { it.copy(tasks = tasks) }
+        }
+    }
+
+    fun deleteCategory(category: CategoryEntity) {
+        viewModelScope.launch {
+            categoryRepository.deleteCategory(category)
         }
     }
 }
 
 sealed class TaskScreenViewModelUiEvent {
     data class SchedulePlanTaskAlarm(val task: PromiseTask) : TaskScreenViewModelUiEvent()
+    data class ValidationError(val message: String) : TaskScreenViewModelUiEvent()
+    data class ShowSnackbar(val message: String) : TaskScreenViewModelUiEvent()
 }
 
 sealed class TaskScreenEvent {

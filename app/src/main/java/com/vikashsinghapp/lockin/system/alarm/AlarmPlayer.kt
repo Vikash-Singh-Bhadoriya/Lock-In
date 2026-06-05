@@ -11,28 +11,73 @@ class AlarmPlayer(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
     private var wasPlaying = false
 
-    fun start() {
+    // Use this for Task END (Loud, annoying, requires user action to stop)
+    fun start(isLoop: Boolean = true) {
         if (mediaPlayer != null) return
 
-        val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        try {
+            // --- FIX: Ensure this is TYPE_ALARM for the loud ending ---
+            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
 
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
-            setDataSource(context, uri)
-            isLooping = true
-            prepare()
-            start()
-            wasPlaying = true
+            if (uri == null) return
+
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(context, uri)
+                isLooping = isLoop
+                prepare()
+                start()
+                wasPlaying = true
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to play alarm sound")
+            stop() // Clean up safely
         }
     }
 
+    // Use this for Task START (Quick 1-second Ding)
+    fun playNotificationSound() {
+        if (mediaPlayer != null) return
 
-    /** Pause alarm while user is marking status */
+        try {
+            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM) // Fallback
+
+            if (uri == null) return
+
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(context, uri)
+                isLooping = false
+
+                // Safely release the player when the ding is done to free up RAM
+                setOnCompletionListener { mp ->
+                    mp.release() // free media Player from memory
+                    mediaPlayer = null // update it to reflect state
+                    wasPlaying = false
+                }
+
+                prepare()
+                start()
+                wasPlaying = true
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to play notification sound")
+            stop() // Prevents the coroutine from crashing!
+        }
+    }
+
     fun pauseAlarm() {
         mediaPlayer?.let {
             if (it.isPlaying) {
@@ -43,7 +88,6 @@ class AlarmPlayer(private val context: Context) {
         }
     }
 
-    /** Resume alarm if user exits without submitting */
     fun resumeAlarm() {
         mediaPlayer?.let {
             if (!it.isPlaying && wasPlaying) {
@@ -52,21 +96,16 @@ class AlarmPlayer(private val context: Context) {
             }
         }
     }
-//    fun reduceVolume() {
-//        Timber.d("AlarmPlayer Reducing alarm volume")
-//        // IT IS NOT WORKING,
-//        mediaPlayer?.setVolume(0f, 0f)
-//    }
-
-//    fun restoreVolume() {
-//        Timber.d("AlarmPlayer RESTORED alarm volume")
-//        mediaPlayer?.setVolume(1f, 1f)
-//    }
 
     fun stop() {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-        mediaPlayer = null
-        wasPlaying = false
+        try {
+            mediaPlayer?.stop()
+        } catch (e: Exception) {
+            Timber.e(e, "Error stopping MediaPlayer")
+        } finally {
+            mediaPlayer?.release()
+            mediaPlayer = null
+            wasPlaying = false
+        }
     }
 }
