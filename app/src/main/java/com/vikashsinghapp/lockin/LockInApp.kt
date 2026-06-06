@@ -29,7 +29,6 @@ class LockInApp : Application() {
         // Notification Channel
         const val CHANNEL_ID = "com.vikashsinghapp.lockin.notification"
         const val ALARM_CHANNEL_ID = "lockin_alarm_channel"
-
     }
 
     override fun onCreate() {
@@ -128,13 +127,16 @@ class LockInApp : Application() {
             enableLights(true)
 //            setSound(null, null) // No sound, only vibration
 
-            setSound(
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
+            // Remove the ringtone configuration and explicitly set it to null => bcs handling
+            // the AlarmPlayer should be the only thing making noise, not the notification itself
+            setSound(null, null)
+//            setSound(
+//                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+//                AudioAttributes.Builder()
+//                    .setUsage(AudioAttributes.USAGE_ALARM)
+//                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+//                    .build()
+//            )
         }
 
         // Register the channel with the system

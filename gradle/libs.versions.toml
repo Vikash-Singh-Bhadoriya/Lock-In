@@ -22,6 +22,7 @@ reorderable = "3.0.0" #using Calvin-LL/Reorderable
 [libraries]
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+splash-screen = { group = "androidx.core", name = "core-splashscreen", version = "1.2.0" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "dataStore" }
 androidx-datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "dataStore" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -38,6 +39,8 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+coil-kt-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.6.0" }
+#coil-kt-gif = { group = "io.coil-kt", name = "coil-gif", version = "2.6.0" }
 androidx-compose-material-iconsExtended = { group = "androidx.compose.material", name = "material-icons-extended" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version = "6.4.1" }

@@ -16,6 +16,7 @@ data class PromiseTask(
     val startTime: LocalTime = LocalTime.now(),
     val endTimePlan: LocalTime = LocalTime.now().plusMinutes(60),
     val status: TaskEndStatus = TaskEndStatus.PENDING,
+    val actualStartTime: LocalTime? = null,
     val actualEndTime: LocalTime? = null,
 //    val status: PromiseTaskStatus = PromiseTaskStatus.NOT_STARTED,
 

@@ -24,8 +24,11 @@ class PromiseTaskRepository(
     suspend fun getTaskByIdOnce(id: Long): PromiseTask? =
         promiseTaskDao.getTaskByIdOnce(id)
 
-    suspend fun addTask(task: PromiseTask) {
-        promiseTaskDao.insert(task)
+    suspend fun addTask(task: PromiseTask): Long {
+        return promiseTaskDao.insert(task)
+    }
+    suspend fun addTasks(tasks: List<PromiseTask>) {
+        promiseTaskDao.insert(tasks)
     }
     suspend fun updateTask(task: PromiseTask) {
         promiseTaskDao.update(task)

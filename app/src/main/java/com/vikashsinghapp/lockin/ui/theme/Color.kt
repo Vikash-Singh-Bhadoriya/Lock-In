@@ -19,3 +19,7 @@ val Running = Color(0xFF2D5BFF)
 val Unfinished = Color(0xFFD68F18)
 val Broken = Color(0xFFE7000B)
 val Completed = Color(0xFF00A63E)
+
+
+val Error = Color(0xFFCF6679)
+val LuminousIndigo = Color(0xFF8C9EFF)

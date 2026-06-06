@@ -9,8 +9,8 @@
     <!--  For Display over other apps  -->
 <!--    "Display over other apps" lets your app show overlays (like chat heads or floating windows).
         "Full-screen notifications" is required for your app to show full-screen intents (like alarms or incoming calls). -->
-<!--    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> &lt;!&ndash; If I disable SYSTEM_ALERT_WINDOW permission => then not show Display over others apps permission in settings => NOT SHOW REFLECTION SCREEN AT ALL&ndash;&gt;-->
-<!--    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />-->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- If I disable SYSTEM_ALERT_WINDOW permission => then not show Display over others apps permission in settings => NOT SHOW REFLECTION SCREEN AT ALL-->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -33,17 +33,29 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:name=".LockInApp"
-        android:theme="@style/Theme.LockIn">
+        android:theme="@style/Theme.App.Starting">
+
+<!--        we must tell Android not to restart the screen when you rotate the phone.
+If we don't do this, rotating the phone will destroy your ViewModel and reset the timer-->
         <activity
             android:name=".MainActivity"
             android:windowSoftInputMode="adjustResize"
-            android:exported="true"
-            android:theme="@style/Theme.LockIn">
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".presentation.roll_call.TaskRollCallActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.LockIn"
+            tools:targetApi="27" />
 
         <activity
             android:name=".presentation.task_status.TaskStatusActivity"
@@ -81,6 +93,15 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+
+        <receiver android:name=".system.receiver.DailyReminderReceiver" android:exported="false" />
+
+        <receiver android:name=".system.receiver.NightlyReportReceiver" android:exported="false" />
+
+        <receiver android:name=".system.receiver.TaskPrepReceiver" android:exported="false" />
+        <receiver android:name=".system.receiver.RollCallTimeoutReceiver" android:exported="false" />
+        <receiver android:name=".system.receiver.NotificationDismissReceiver" android:exported="false" />
+        <receiver android:name=".system.receiver.TaskReadyReceiver" android:exported="false" />
 
         <service
             android:name=".system.service.TaskExecutionService"

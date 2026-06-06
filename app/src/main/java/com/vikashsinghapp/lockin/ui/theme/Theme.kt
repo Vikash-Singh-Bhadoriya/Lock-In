@@ -1,59 +1,34 @@
 package com.vikashsinghapp.lockin.ui.theme
 
 import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 
+// 🟢 MODIFIED: We ONLY use DarkColors for LockIn to preserve the tactical cage aesthetic.
+// No dynamic color, no light mode.
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    background = BackgroundDark,
+    surface = SurfaceDark,
+    surfaceVariant = SurfaceDarkElevated,
+    primary = Running,
+    error = Error
+    // Add other mappings if needed, but these cover 90% of your M3 components
 )
 
 @Composable
 fun LockInTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // We removed dynamicColor and darkTheme parameters because LockIn is strictly Dark Mode.
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
+    val colorScheme = DarkColorScheme
     val view = LocalView.current
+
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
@@ -61,13 +36,31 @@ fun LockInTheme(
                 .getInsetsController(window, view)
                 // needed as without it in Light Mode, the status bar content + background => whole black
                 .isAppearanceLightStatusBars = false
-
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    // Wrap MaterialTheme in our Custom Spacing Provider
+    CompositionLocalProvider(LocalSpacing provides Spacing()) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography, // 🟢 Injects your new Type.kt
+            content = content
+        )
+    }
+}
+
+// When ModalBottomSheet opens, it does not just draw a view on your screen; it creates an
+// entirely new Android Window (a Dialog). This new Dialog Window completely ignores the
+// LockInTheme you set in MainActivity and resets the status bar icons to their default state
+@Composable
+fun ForceWhiteStatusBarIcons() {
+    val view = LocalView.current
+    SideEffect {
+        // This safely grabs the Bottom Sheet's invisible Dialog window
+        val window = (view.parent as? DialogWindowProvider)?.window
+        if (window != null) {
+            // Force the icons to stay white in dark mode
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
+    }
 }

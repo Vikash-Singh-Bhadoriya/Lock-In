@@ -30,12 +30,35 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
+            // Disables code shrinking for the debug build type.
+            // compile-time optimizations increase the build time of your project and might introduce bugs
             isMinifyEnabled = false
+
+            applicationIdSuffix = ".debug" // Used to differentiate between multiple builds on same device
+
+            versionNameSuffix = "-DEBUG"
+            isDebuggable = true
+        }
+        release {
+            // Enables code shrinking, obfuscation, and optimization for only
+            // your project's release build type.
+            isMinifyEnabled = true
+
+            // Enables resource shrinking, which is performed by the Android Gradle plugin.
+            isShrinkResources = true
+
+            // ProGuard rules files helps to customize default R8’s behavior
+            // help R8 better understand your app’s structure
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
+                // List additional ProGuard rules for the given build type here. By default,
+                // Android Studio creates and includes an empty rules file for you (located
+                // at the root directory of each module).
                 "proguard-rules.pro"
             )
+            isDebuggable = false
+
         }
     }
     compileOptions {
@@ -47,6 +70,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -59,6 +83,8 @@ dependencies {
 
     // Reorder plan's task
     implementation(libs.reorderable)
+    // Reorder plan's task
+    implementation(libs.coil.kt.compose)
 
     // Lottie Animation
     implementation(libs.lottie.compose)
@@ -77,6 +103,9 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
+
+    // Splash Screen
+    implementation(libs.splash.screen)
 
     // Dagger-Hilt -> DI
     ksp(libs.hilt.compiler)

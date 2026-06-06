@@ -1,6 +1,13 @@
 <resources>
-    <string name="app_name">Lock In</string>
+    <!-- Do not translate app name. See Notion Business for more detail -->
+    <string name="app_name" translatable="false">Lock In</string>
+    <string name="hey" translatable="false">Hey</string>
+    <string name="pick_an_email_provider" translatable="false">Pick an Email provider</string>
+    <string name="app" translatable="false">App</string>
+    <string name="feedback" translatable="false">Feedback</string>
+
     <string name="click_me">Click Me</string>
     <string name="close_calendar">Close</string>
     <string name="open_calendar">Open</string>
+    <string name="vikash_singh">Vikash Singh</string>
 </resources>

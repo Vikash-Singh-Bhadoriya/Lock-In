@@ -8,7 +8,11 @@ import com.vikashsinghapp.lockin.presentation.navigation.Screen.TomorrowFocusScr
 object Constants {
     const val TAG = "LockInApp"
     const val REQUEST_CODE_DRAW_OVER_APPS = 2894
+    const val NAVIGATE_TO_TIMELINE = "NAVIGATE_TO_TIMELINE"
+    const val NAVIGATE_TO_ANALYTICS = "NAVIGATE_TO_ANALYTICS"
+    const val NAVIGATE_TO_ACTIVE_FOCUS_TASK_ID = "NAVIGATE_TO_ACTIVE_FOCUS_TASK_ID"
+
 
     // Defining allScreens outside the sealed class ensures all objects are initialized before the list is created.
-    val ALL_SCREENS = listOf(Screen.TaskScreen, JournalScreen, TomorrowFocusScreen, SettingsScreen)
+    val ALL_SCREENS = listOf(Screen.TaskScreen, JournalScreen, TomorrowFocusScreen, Screen.AnalyticsScreen, SettingsScreen)
 }

@@ -4,9 +4,10 @@ import android.content.Context
 import com.vikashsinghapp.lockin.data.dao.CategoryDao
 import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
 import com.vikashsinghapp.lockin.data.dao.PromiseDao
+import com.vikashsinghapp.lockin.data.dao.TemplateDao
+import com.vikashsinghapp.lockin.data.repository.AppPrefsRepository
 import com.vikashsinghapp.lockin.data.repository.CategoryRepository
 import com.vikashsinghapp.lockin.data.repository.JournalRepository
-import com.vikashsinghapp.lockin.data.repository.PlanPrefsRepository
 import com.vikashsinghapp.lockin.data.repository.PromiseTaskRepository
 import dagger.Module
 import dagger.Provides
@@ -22,26 +23,28 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideJournalRepository(
-        dao: JournalMessageDao
+        dao: JournalMessageDao,
     ): JournalRepository = JournalRepository(dao)
 
     @Provides
     @Singleton
     fun provideTaskRepository(
-        dao: PromiseDao
+        dao: PromiseDao,
     ): PromiseTaskRepository = PromiseTaskRepository(dao)
 
     @Provides
     @Singleton
     fun provideCategoryRepository(
-        dao: CategoryDao
-    ): CategoryRepository = CategoryRepository(dao)
+        categoryDao: CategoryDao,
+        promiseDao: PromiseDao,
+        templateDao: TemplateDao,
+    ): CategoryRepository = CategoryRepository(categoryDao, promiseDao, templateDao)
 
     @Provides
     @Singleton
-    fun providePlanPrefsRepository(
+    fun provideAppPrefsRepository(
         @ApplicationContext context: Context,
-    ): PlanPrefsRepository = PlanPrefsRepository(context)
+    ): AppPrefsRepository = AppPrefsRepository(context)
 
 //}
 //    @Binds // When someone asks for Interface, give them this implementation
