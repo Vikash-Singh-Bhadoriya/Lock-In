@@ -16,8 +16,14 @@ interface PromiseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(promise: PromiseTask): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(promises: List<PromiseTask>)
+
     @Update
     suspend fun update(promise: PromiseTask)
+
+    @Query("UPDATE promise_task SET category = :newName WHERE category = :oldName")
+    suspend fun updateCategoryNameInTasks(oldName: String, newName: String)
 
     @Delete
     suspend fun delete(promise: PromiseTask)
