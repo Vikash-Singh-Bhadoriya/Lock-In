@@ -1,6 +1,7 @@
 package com.vikashsinghapp.lockin.data.repository
 
 import com.vikashsinghapp.lockin.data.dao.PromiseDao
+import com.vikashsinghapp.lockin.data.entity.DailyCompletionStat
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -36,4 +37,7 @@ class PromiseTaskRepository(
     suspend fun deleteTask(task: PromiseTask) {
         promiseTaskDao.delete(task)
     }
+
+    fun getAllDailyCompletionStats(): Flow<List<DailyCompletionStat>> =
+        promiseTaskDao.getAllDailyCompletionStats()
 }

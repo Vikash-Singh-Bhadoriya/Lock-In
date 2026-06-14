@@ -10,6 +10,8 @@ import com.vikashsinghapp.lockin.data.dao.DayReflectionDao
 import com.vikashsinghapp.lockin.data.dao.JournalMessageDao
 import com.vikashsinghapp.lockin.data.dao.PromiseDao
 import com.vikashsinghapp.lockin.data.dao.TemplateDao
+import com.vikashsinghapp.lockin.BuildConfig
+import com.vikashsinghapp.lockin.data.database.HeatmapDemoSeeder
 import com.vikashsinghapp.lockin.data.database.LockInDatabase
 import com.vikashsinghapp.lockin.data.database.MIGRATION_1_2
 import com.vikashsinghapp.lockin.data.repository.AppPrefsRepository
@@ -64,6 +66,14 @@ object DatabaseModule {
             })
             .addMigrations(MIGRATION_1_2)
             .build()
+
+        // Debug-only: one-time heatmap demo tasks (12 months of mixed statuses).
+        if (BuildConfig.DEBUG) {
+            coroutineScope.launch {
+                HeatmapDemoSeeder.seedIfNeeded(database.promiseDao(), preferencesRepository)
+            }
+        }
+
         return database
     }
 

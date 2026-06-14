@@ -23,3 +23,10 @@ val Completed = Color(0xFF00A63E)
 
 val Error = Color(0xFFCF6679)
 val LuminousIndigo = Color(0xFF8C9EFF)
+
+// LeetCode-style ramp: low-efficiency cells are barely visible; 100 % is the brightest.
+val HeatmapEmpty = Color(0xFF2A2A2A)
+val HeatmapLevel1 = Color(0xFF0F2A4A)   // ~1–33 %  — very dark, faded
+val HeatmapLevel2 = Color(0xFF1E4A7A)   // ~34–66 % — muted navy
+val HeatmapLevel3 = Color(0xFF3B6FD4)   // ~67–99 % — medium blue
+val HeatmapLevel4 = Color(0xFF82C4FF)   // 100 %     — brightest sky blue

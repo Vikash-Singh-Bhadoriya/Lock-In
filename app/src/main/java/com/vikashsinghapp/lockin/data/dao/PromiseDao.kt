@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.vikashsinghapp.lockin.data.entity.DailyCompletionStat
 import com.vikashsinghapp.lockin.data.entity.PromiseTask
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -44,4 +45,23 @@ interface PromiseDao {
 
     @Query("SELECT * FROM promise_task WHERE planDate = :planDate")
     suspend fun getAllTasksOnce(planDate: LocalDate): List<PromiseTask>
+
+    // No date filter — returns every day that has tasks, from the user's very first entry.
+    // UNFINISHED counts as partial credit (50) so days with honest work still light up the heatmap.
+    @Query(
+        """
+        SELECT planDate as date,
+               COUNT(*) as totalTasks,
+               SUM(CASE WHEN status != 'PENDING' THEN 1 ELSE 0 END) as activeTasks,
+               SUM(CASE
+                   WHEN status = 'COMPLETED' THEN 100
+                   WHEN status = 'UNFINISHED' THEN 50
+                   ELSE 0
+               END) as weightedScore
+        FROM promise_task
+        GROUP BY planDate
+        ORDER BY planDate ASC
+        """
+    )
+    fun getAllDailyCompletionStats(): Flow<List<DailyCompletionStat>>
 }

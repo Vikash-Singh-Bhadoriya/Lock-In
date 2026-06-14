@@ -14,10 +14,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -83,78 +82,91 @@ fun DateCalendar(
                 }
             }
 
-            // Wrap DatePicker in a custom MaterialTheme to force icon tint to White
             Surface(
                 color = Transparent,
-                contentColor = White // needed for Month drop down icon
+                contentColor = White,
             ) {
-                DatePicker(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.large)
-                        .border(
-                            1.dp,
-                            Color(0xFF071146), // Blue border for visibility
-                            MaterialTheme.shapes.large
-                        )
-                        .padding(1.dp),
+                LockInDatePicker(
                     state = datePickerState,
-                    showModeToggle = true,
-                    colors = DatePickerDefaults.colors(
-                        containerColor = SurfaceDarkElevated, // Calendar background
-                        titleContentColor = White.copy(alpha = 0.7f), // "Select date" title
-                        headlineContentColor = White, // Selected date (e.g., "10 Mar 2026")
-                        weekdayContentColor = Color(0xFFB0B0B0), // Light gray for weekdays
-                        subheadContentColor = Color(0xFFB0B0B0), // Light gray for month/year
-                        navigationContentColor = White, // Navigation arrows/icons
-                        yearContentColor = White, // Year text
-                        disabledYearContentColor = Color(0xFF666666), // Dark gray for disabled year
-                        currentYearContentColor = Color(0xFF2D5BFF), // Blue accent for current year
-                        selectedYearContentColor = White, // Selected year text
-                        disabledSelectedYearContentColor = Color(0xFF888888), // Disabled selected year
-                        selectedYearContainerColor = Color(0xFF2D5BFF).copy(alpha = 0.2f), // Selected year background
-                        disabledSelectedYearContainerColor = SurfaceDarkElevated, // Disabled selected year background
-                        dayContentColor = White, // Day text
-                        disabledDayContentColor = Color(0xFF666666), // Disabled day
-                        selectedDayContentColor = White, // Selected day text
-                        disabledSelectedDayContentColor = Color(0xFF888888), // Disabled selected day
-                        selectedDayContainerColor = Color(0xFF2D5BFF), // Selected day background
-                        disabledSelectedDayContainerColor = SurfaceDarkElevated, // Disabled selected day background
-                        todayContentColor = Color(0xFF2D5BFF), // Today text
-                        todayDateBorderColor = Color(0xFF2D5BFF), // Today border
-                        dayInSelectionRangeContentColor = White, // Range day text
-                        dayInSelectionRangeContainerColor = Color(0xFF2D5BFF).copy(alpha = 0.15f), // Range day background
-                        dividerColor = Color(0xFF444444), // Divider
-                        dateTextFieldColors = TextFieldDefaults.colors(
-                            focusedTextColor = White,
-                            unfocusedTextColor = White,
-                            disabledTextColor = Color(0xFF888888),
-                            errorTextColor = Color(0xFFFF5252), // Red for error
-                            focusedContainerColor = SurfaceDarkElevated,
-                            unfocusedContainerColor = SurfaceDarkElevated,
-                            disabledContainerColor = SurfaceDarkElevated,
-                            errorContainerColor = SurfaceDarkElevated,
-                            cursorColor = Color(0xFF2D5BFF),
-                            errorCursorColor = Color(0xFFFF5252),
-                            focusedIndicatorColor = Color(0xFF2D5BFF), // Blue border when focused
-                            unfocusedIndicatorColor = Color(0xFF444444), // Gray border when unfocused
-                            disabledIndicatorColor = Color(0xFF444444),
-                            errorIndicatorColor = Color(0xFFFF5252),
-                            focusedLabelColor = White,
-                            unfocusedLabelColor = Color(0xFFB0B0B0),
-                            disabledLabelColor = Color(0xFF888888),
-                            errorLabelColor = Color(0xFFFF5252),
-                            focusedPlaceholderColor = Color(0xFFB0B0B0),
-                            unfocusedPlaceholderColor = Color(0xFFB0B0B0),
-                            disabledPlaceholderColor = Color(0xFF888888),
-                            errorPlaceholderColor = Color(0xFFFF5252),
-                        ),
-                    )
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
     }
 }
+
+@Composable
+fun LockInDatePicker(
+    state: DatePickerState,
+    modifier: Modifier = Modifier,
+    showModeToggle: Boolean = true,
+) {
+    DatePicker(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .border(
+                1.dp,
+                Color(0xFF071146),
+                MaterialTheme.shapes.large,
+            )
+            .padding(1.dp),
+        state = state,
+        showModeToggle = showModeToggle,
+        colors = lockInDatePickerColors(),
+    )
+}
+
+@Composable
+fun lockInDatePickerColors() = androidx.compose.material3.DatePickerDefaults.colors(
+    containerColor = SurfaceDarkElevated,
+    titleContentColor = White.copy(alpha = 0.7f),
+    headlineContentColor = White,
+    weekdayContentColor = Color(0xFFB0B0B0),
+    subheadContentColor = Color(0xFFB0B0B0),
+    navigationContentColor = White,
+    yearContentColor = White,
+    disabledYearContentColor = Color(0xFF666666),
+    currentYearContentColor = Color(0xFF2D5BFF),
+    selectedYearContentColor = White,
+    disabledSelectedYearContentColor = Color(0xFF888888),
+    selectedYearContainerColor = Color(0xFF2D5BFF).copy(alpha = 0.2f),
+    disabledSelectedYearContainerColor = SurfaceDarkElevated,
+    dayContentColor = White,
+    disabledDayContentColor = Color(0xFF666666),
+    selectedDayContentColor = White,
+    disabledSelectedDayContentColor = Color(0xFF888888),
+    selectedDayContainerColor = Color(0xFF2D5BFF),
+    disabledSelectedDayContainerColor = SurfaceDarkElevated,
+    todayContentColor = Color(0xFF2D5BFF),
+    todayDateBorderColor = Color(0xFF2D5BFF),
+    dayInSelectionRangeContentColor = White,
+    dayInSelectionRangeContainerColor = Color(0xFF2D5BFF).copy(alpha = 0.15f),
+    dividerColor = Color(0xFF444444),
+    dateTextFieldColors = androidx.compose.material3.TextFieldDefaults.colors(
+        focusedTextColor = White,
+        unfocusedTextColor = White,
+        disabledTextColor = Color(0xFF888888),
+        errorTextColor = Color(0xFFFF5252),
+        focusedContainerColor = SurfaceDarkElevated,
+        unfocusedContainerColor = SurfaceDarkElevated,
+        disabledContainerColor = SurfaceDarkElevated,
+        errorContainerColor = SurfaceDarkElevated,
+        cursorColor = Color(0xFF2D5BFF),
+        errorCursorColor = Color(0xFFFF5252),
+        focusedIndicatorColor = Color(0xFF2D5BFF),
+        unfocusedIndicatorColor = Color(0xFF444444),
+        disabledIndicatorColor = Color(0xFF444444),
+        errorIndicatorColor = Color(0xFFFF5252),
+        focusedLabelColor = White,
+        unfocusedLabelColor = Color(0xFFB0B0B0),
+        disabledLabelColor = Color(0xFF888888),
+        errorLabelColor = Color(0xFFFF5252),
+        focusedPlaceholderColor = Color(0xFFB0B0B0),
+        unfocusedPlaceholderColor = Color(0xFFB0B0B0),
+        disabledPlaceholderColor = Color(0xFF888888),
+        errorPlaceholderColor = Color(0xFFFF5252),
+    ),
+)
 
 //@Composable
 //fun InfiniteCalendarLazyRow(

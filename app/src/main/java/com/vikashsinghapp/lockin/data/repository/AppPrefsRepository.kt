@@ -74,6 +74,7 @@ object AppPrefsKeys {
     val PENDING_TASK_ID = longPreferencesKey("pending_task_id")
     val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     val HAS_SEEDED_DEFAULTS = booleanPreferencesKey("has_seeded_defaults")
+    val HAS_SEEDED_HEATMAP_DEMO = booleanPreferencesKey("has_seeded_heatmap_demo")
 
     val IS_REMINDER_ENABLED = booleanPreferencesKey("is_reminder_enabled")
     val REMINDER_HOUR = intPreferencesKey("reminder_hour")
@@ -160,6 +161,16 @@ class AppPrefsRepository(private val context: Context) {
     suspend fun setHasSeededDefaults(seeded: Boolean) {
         context.appDataStore.edit { prefs ->
             prefs[AppPrefsKeys.HAS_SEEDED_DEFAULTS] = seeded
+        }
+    }
+
+    val hasSeededHeatmapDemo: Flow<Boolean> = context.appDataStore.data.map { prefs ->
+        prefs[AppPrefsKeys.HAS_SEEDED_HEATMAP_DEMO] ?: false
+    }
+
+    suspend fun setHasSeededHeatmapDemo(seeded: Boolean) {
+        context.appDataStore.edit { prefs ->
+            prefs[AppPrefsKeys.HAS_SEEDED_HEATMAP_DEMO] = seeded
         }
     }
 
