@@ -21,7 +21,8 @@ interface JournalMessageDao {
     @Query("""
         SELECT j.*, 
                IFNULL(t.title, '') as taskTitle, 
-               IFNULL(t.category, '') as taskCategory 
+               IFNULL(t.category, '') as taskCategory,
+               t.status as taskStatus
         FROM journal_messages j 
         LEFT JOIN promise_task t ON j.duringPromiseTaskId = t.id 
         ORDER BY j.timestamp ASC

@@ -62,6 +62,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
 import com.vikashsinghapp.lockin.data.entity.TaskEndStatus
 import com.vikashsinghapp.lockin.formatTime
+import com.vikashsinghapp.lockin.presentation.journal.JournalLogCardSimple
+import com.vikashsinghapp.lockin.presentation.journal.statusBorderColor
 import com.vikashsinghapp.lockin.presentation.journal.toTimeString
 import com.vikashsinghapp.lockin.presentation.today.isCurrent
 import com.vikashsinghapp.lockin.presentation.today.isPast
@@ -158,7 +160,14 @@ fun TaskDetailScreen(
             ) {
                 Spacer(Modifier.height(16.dp))
 
-                // --- Task Identity ---
+                // --- Task header card ---
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(SurfaceDarkElevated)
+                        .padding(16.dp),
+                ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -269,7 +278,6 @@ fun TaskDetailScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(SurfaceDarkElevated)
-                                .padding(12.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -299,12 +307,12 @@ fun TaskDetailScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(SurfaceDarkElevated)
-                                .clickable { showTimeEditDialog = true }
-                                .padding(16.dp),
+                                .clickable { showTimeEditDialog = true },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Scheduled Time", color = Color.LightGray, fontSize = 14.sp)
+                            Spacer(Modifier.width(12.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = "${task.startTime.formatTime()} - ${(task.actualEndTime ?: task.endTimePlan).formatTime()}",
@@ -328,8 +336,11 @@ fun TaskDetailScreen(
                         color = Color.Gray, fontSize = 16.sp
                     )
                 }
+                } // end header card
 
                 Spacer(Modifier.height(24.dp))
+
+                val now = LocalTime.now()
 
                 // --- STATUS DISPLAY & PICKER ---
                 Text("Task Status", color = White, fontWeight = FontWeight.SemiBold)
@@ -438,24 +449,32 @@ fun TaskDetailScreen(
 
                 Spacer(Modifier.height(32.dp))
 
-                // --- Journal Timeline (Sync Feed) ---
-                Text("Task Journals", color = White, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(12.dp))
+                // --- Journal chat feed ---
+                Text("Task Journals", color = White, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
 
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                    .background(BackgroundDark)
+                        .padding(vertical = 8.dp),
+                ) {
                 if (uiState.messages.isEmpty()) {
                     Box(
                         Modifier
                             .fillMaxWidth()
-                            .height(100.dp),
+                            .height(80.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No journal entries for this task.", color = Color.Gray)
+                        Text("No journal entries for this task.", color = Color(0xFF8696A0), fontSize = 14.sp)
                     }
                 } else {
+                    val logBorderColor = statusBorderColor(task.status.name)
                     uiState.messages.forEach { msg ->
-                        LogMessageItem(msg)
-                        Spacer(Modifier.height(8.dp))
+                        LogMessageItem(msg, borderColor = logBorderColor)
                     }
+                }
                 }
             }
         }
@@ -491,20 +510,12 @@ fun TaskDetailScreen(
 }
 
 @Composable
-fun LogMessageItem(message: JournalMessage) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(SurfaceDarkElevated)
-            .padding(12.dp)
-    ) {
-        Text(text = message.content, color = White, fontSize = 15.sp)
-        Text(
-            text = message.timestamp.toTimeString(),
-            color = Color.Gray, fontSize = 11.sp, modifier = Modifier.align(Alignment.End)
-        )
-    }
+fun LogMessageItem(message: JournalMessage, borderColor: Color) {
+    JournalLogCardSimple(
+        text = message.content,
+        timestamp = message.timestamp.toTimeString(),
+        borderColor = borderColor,
+    )
 }
 
 @Composable

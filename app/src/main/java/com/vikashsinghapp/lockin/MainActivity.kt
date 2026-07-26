@@ -140,6 +140,13 @@ class MainActivity : ComponentActivity() {
         // It tells the app to draw behind the system bars
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        // Force the app to draw into the display cutout area (camera notch) in landscape mode
+        // Without this, Android adds a solid black pillar box on the side with the camera.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+
         setContent {
             LockInTheme {
                 // A surface container using the 'background' color from the theme

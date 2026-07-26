@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -43,8 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vikashsinghapp.lockin.data.entity.JournalMessage
 import com.vikashsinghapp.lockin.presentation.core.AutoResizeText
+import com.vikashsinghapp.lockin.presentation.core.HideNavigationBar
+import com.vikashsinghapp.lockin.presentation.journal.JournalLogCardSimple
+import com.vikashsinghapp.lockin.presentation.journal.toTimeString
 import com.vikashsinghapp.lockin.presentation.task_detail.JournalInputBar
-import com.vikashsinghapp.lockin.presentation.task_detail.LogMessageItem
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 import com.vikashsinghapp.lockin.ui.theme.Running
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
@@ -118,99 +123,112 @@ fun ActiveFocusScreen(
 
         Scaffold(
             containerColor = BackgroundDark,
+            contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
-                JournalInputBar(
-                    value = logInput,
-                    onValueChange = { logInput = it },
-                    onSend = {
-                        onAddLog(it)
-                        logInput = ""
-                    }
-                )
+                Box(modifier = Modifier.consumeWindowInsets(WindowInsets.navigationBars)) {
+                    JournalInputBar(
+                        value = logInput,
+                        onValueChange = { logInput = it },
+                        onSend = {
+                            onAddLog(it)
+                            logInput = ""
+                        },
+                        hintText = "Message",
+                    )
+                }
             }
         ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 12.dp),
             ) {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
 
-                // --- Top Bar: Title & Ghost Button ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = taskTitle.uppercase(),
-                        color = Color.Gray,
-                        fontSize = 14.sp,
+                        color = Color(0xFF8696A0),
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
-
-                    // The 3-Second Ghost Hatch
                     GhostHoldToEndEarlyButton(onEndEarly = onEndEarlySession)
                 }
 
-                Spacer(Modifier.height(48.dp))
+                Spacer(Modifier.height(24.dp))
 
-                // --- Center: The Progress Ring & Timer ---
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(280.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                 ) {
-                    // Background Track
                     CircularProgressIndicator(
                         progress = { 1f },
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.size(220.dp),
                         color = SurfaceDarkElevated,
-                        strokeWidth = 16.dp
+                        strokeWidth = 14.dp,
                     )
-                    // Active Running Track
                     CircularProgressIndicator(
                         progress = { progressPercentage },
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.size(220.dp),
                         color = themeColor,
                         trackColor = Color.Transparent,
                         strokeCap = StrokeCap.Round,
-                        strokeWidth = 15.dp
+                        strokeWidth = 13.dp,
                     )
-
-                    // Timer Text inside the ring
                     Text(
                         text = timeRemainingFormatted,
                         color = themeColor,
-                        fontSize = 54.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 46.sp,
+                        fontWeight = FontWeight.Bold,
                     )
                 }
 
-                Spacer(Modifier.height(48.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // --- Middle-Bottom: The Live Feed ---
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("Session Logs", color = Color.DarkGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
+                Text(
+                    "Session Logs",
+                    color = Color(0xFF8696A0),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
 
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(BackgroundDark),
+                ) {
                     if (journalMessages.isEmpty()) {
                         Text(
-                            text = "No notes recorded yet. Stay focused.",
-                            color = Color.Gray,
+                            text = "No notes yet. Log progress below.",
+                            color = Color(0xFF8696A0),
                             fontSize = 14.sp,
-                            modifier = Modifier.padding(top = 16.dp)
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp),
                         )
                     } else {
                         LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            items(journalMessages) { msg ->
-                                LogMessageItem(msg)
+                            items(journalMessages, key = { it.id }) { msg ->
+                                JournalLogCardSimple(
+                                    text = msg.content,
+                                    timestamp = msg.timestamp.toTimeString(),
+                                    borderColor = Running,
+                                )
                             }
                         }
                     }

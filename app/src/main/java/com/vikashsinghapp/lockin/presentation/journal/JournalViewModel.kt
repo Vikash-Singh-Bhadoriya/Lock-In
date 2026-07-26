@@ -34,9 +34,9 @@ class JournalViewModel @Inject constructor(
     private val _selectedCategory = MutableStateFlow("All")
     val selectedCategory = _selectedCategory.asStateFlow()
 
-    // 1. Get all raw messages
+    // Eagerly cache so switching Task ↔ Journal via drawer is instant (no empty flash).
     private val allMessages = repository.getCombinedMessages()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // 2. Dynamically extract unique categories from the messages
     val categories: StateFlow<List<String>> = allMessages.map { messages ->
@@ -57,7 +57,7 @@ class JournalViewModel @Inject constructor(
         }
 
         result
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf("All"))
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, listOf("All"))
 
     // 3. Filter messages based on the selected category
     val filteredMessages: StateFlow<List<JournalMessageWithTask>> = combine(
@@ -70,7 +70,7 @@ class JournalViewModel @Inject constructor(
             "Uncategorized" -> messages.filter { it.taskCategory.isNullOrBlank() }
             else -> messages.filter { it.taskCategory == category }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _selectedMessages = MutableStateFlow<Set<Long>>(emptySet())
     val selectedMessages = _selectedMessages.asStateFlow()
@@ -178,5 +178,6 @@ data class JournalMessageWithTask(
     // ap the standard JournalMessage columns (id, content, timestamp etc) directly into that property.
     @Embedded val message: JournalMessage,
     val taskTitle: String?, //bcs a general msg has not task title or task category
-    val taskCategory: String?
+    val taskCategory: String?,
+    val taskStatus: String? = null // Maps to TaskEndStatus.name (e.g. "BROKEN", "COMPLETED") — null for general logs
 )

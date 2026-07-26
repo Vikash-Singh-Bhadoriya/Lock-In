@@ -2,7 +2,11 @@ package com.vikashsinghapp.lockin.presentation.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +26,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.vikashsinghapp.lockin.presentation.core.HideNavigationBar
 import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,22 +39,37 @@ fun NavigationScaffold(
     drawerViewModel: DrawerViewModel = hiltViewModel(),
 ) {
     val isDrawerOpen by drawerViewModel.isDrawerOpen.collectAsState()
-    val drawerState = rememberDrawerState(
-        if (isDrawerOpen) DrawerValue.Open else DrawerValue.Closed
-    )
+    
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val orientation = configuration.orientation
+
+    // By recreating DrawerState on orientation change, we bypass the Compose constraint-snapping bug 
+    // and rememberSaveable persistence. The drawer will synchronously render as Closed on rotation.
+    val drawerState = remember(orientation) {
+        // Also synchronously reset the ViewModel so it doesn't try to animate the drawer back open
+        // if the user happened to have it open before they rotated.
+        drawerViewModel.closeDrawer()
+        androidx.compose.material3.DrawerState(DrawerValue.Closed)
+    }
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.TomorrowFocusScreen.route
 
     // Extract the pure base route (strips away ?date= or /taskId)
     val baseRoute = currentRoute.substringBefore("?").substringBefore("/")
 
+    // Hide Android nav bar on active focus screen only.
+    HideNavigationBar(
+        enabled = baseRoute == Screen.ActiveFocusScreen.route,
+    )
+
+    // ViewModel drives drawer open/close — one-way sync
     LaunchedEffect(isDrawerOpen) {
         if (isDrawerOpen) drawerState.open() else drawerState.close()
     }
-    LaunchedEffect(drawerState.isOpen) {
-        if (drawerState.isOpen && !isDrawerOpen) {
-            drawerViewModel.openDrawer()
-        } else if (!drawerState.isOpen && isDrawerOpen) {
+    // Sync gesture-close back to ViewModel (e.g. user swiped drawer shut)
+    LaunchedEffect(drawerState.isClosed) {
+        if (drawerState.isClosed && isDrawerOpen) {
             drawerViewModel.closeDrawer()
         }
     }
@@ -78,11 +98,15 @@ fun NavigationScaffold(
         }
     ) {
         val snackbarHostState = remember { SnackbarHostState() }
+        val insetsSides = if (baseRoute == Screen.ActiveFocusScreen.route) {
+            WindowInsetsSides.Top
+        } else {
+            WindowInsetsSides.Vertical
+        }
+
         Scaffold(
-            // systemBarsPadding() <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding(), // Use fillMaxSize to own the window space => the system status bar also
+            modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets.systemBars.only(insetsSides),
             containerColor = BackgroundDark,
 //            topBar = {
 //                // This Top App Bar includes the system status bar also.

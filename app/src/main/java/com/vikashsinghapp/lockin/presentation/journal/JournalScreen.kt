@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.vikashsinghapp.lockin.ui.theme.BackgroundDark
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDark
 import com.vikashsinghapp.lockin.ui.theme.SurfaceDarkElevated
 import com.vikashsinghapp.lockin.ui.theme.spacing
@@ -87,7 +88,7 @@ fun JournalScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = Color.Transparent, // Let global background shine through
+        containerColor = BackgroundDark,
         topBar = {
             // ---  DYNAMIC TOP BAR ---
             if (isSelectionMode) {
@@ -174,8 +175,9 @@ fun JournalScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // This pushes content below the TopBar
-                .imePadding() // <-- if not apply then the input bar is like 20.dp away from bottom when keyboard appear
+                .background(BackgroundDark)
+                .padding(innerPadding)
+                .imePadding()
         ) {
             val listState = rememberLazyListState()
 
@@ -223,7 +225,9 @@ fun JournalScreen(
             // 1. Category Filter Strip
             if (categories.size > 1) {
                 LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SurfaceDark),
                     contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.large, vertical = MaterialTheme.spacing.small),
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                 ) {
